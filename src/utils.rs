@@ -2,6 +2,7 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io;
+use std::env;
 
 pub use crate::DEBUG;
 macro_rules! DEBUG {
@@ -51,6 +52,19 @@ macro_rules! print_indent {
     };
 }
 
+
+macro_rules! set(
+    { $($key:expr),+ } => {
+        {
+            let mut m = ::std::collections::HashSet::new();
+            $(
+                m.insert($key);
+            )+
+            m
+        }
+     };
+);
+
 macro_rules! map(
     { $($key:expr => $value:expr),+ } => {
         {
@@ -75,6 +89,11 @@ macro_rules! check_default {
 
 pub const EPSILON_TOKEN: &'static str = "\0";
 pub const FINISH_TOKEN: &'static str = "$";
+
+
+pub fn get_env_var(varname: &str, default: &str) -> String {
+	if let Ok(s) = env::var(varname) { s } else { default.to_string() }
+}
 
 pub fn read_file(path: &str) -> Result<String, io::Error> {
 	let mut file = File::open(path)?;

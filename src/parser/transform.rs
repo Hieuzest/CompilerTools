@@ -1,10 +1,14 @@
 use super::grammar::*;
 use super::*;
-// use super::tree::TreeNode;
-
 use std::collections::HashMap;
-
 use super::utils::*;
+
+
+pub trait Transform {
+
+    fn inverse(&self) -> Box<dyn Transform>;
+}
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Substitution {
@@ -12,6 +16,12 @@ pub struct Substitution {
     source: Production,
     target: Production,
     pos: usize,
+}
+
+impl Transform for Substitution {
+    fn inverse(&self) -> Box<dyn Transform> {
+        Box::new(self.clone())
+    }
 }
 
 impl Substitution {
@@ -440,4 +450,25 @@ pub fn retrieve_unwrap(node: Node) -> Node {
         }
     }
     out_stack.pop().unwrap().unwrap()
+}
+
+pub fn elimate_epsilon(mut grammar: Grammar) -> Grammar {
+    loop {
+        let mut tfs = Vec::new();
+        for rule in &grammar.productions {
+            if rule.expr.terms.len() == 0 {
+                for r in &grammar.productions {
+                    if let Some(p) = r.expr.terms.iter().position(|x| if let Term::NonTerminal { name, .. } = x { name == &rule.name } else { false }) {
+                        tfs.push(Substitution::new(r.clone(), rule.clone(), p));
+                    }
+                }
+                break;
+            }
+        }
+
+        for tf in &tfs {
+            grammar = tf.apply_to_grammar(grammar);
+        }
+    }
+    grammar
 }

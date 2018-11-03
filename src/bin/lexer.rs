@@ -1,7 +1,4 @@
 
-pub static mut DEBUG: bool = false;
-pub static mut VERBOSE: bool = false;
-
 use coolc::utils::*;
 use coolc::lexer;
 
@@ -24,8 +21,8 @@ fn main() {
 
     let mut debug = false;
     let mut verbose = false;
-    let mut config = "cool.lex".to_string();
-    let mut input_model = String::new();
+    let mut config = get_env_var("LEXER_CONFIG", "cool.lex");
+    let mut input_model = get_env_var("LEXER_MODEL", "");
     let mut output_model = String::new();
     let mut source = String::new();
     let mut output_file = String::new();
@@ -51,9 +48,10 @@ fn main() {
     }
 
 
-    let rules = if input_model.is_empty() { lexer::read_config(config.as_str()) } else { serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error") };
+    let rules = if input_model.is_empty() { lexer::read_config(config.as_str()).expect(&format!("Cannot open file: {:} as LEXER_CONFIG", config)) } 
+        else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as LEXER_MODEL", input_model))).expect("Deserialize error") };
     if !output_model.is_empty() { write_file(output_model.as_str(), serde_yaml::to_string(&rules).expect("Serialize error")).unwrap(); }
-    let tokens = lexer::tokenize(read_file(source.as_str()).expect("Cannot open target file").as_str(), &rules);
+    let tokens = lexer::tokenize(read_file(source.as_str()).expect("Cannot open source file").as_str(), &rules);
 
     println!("#name \"{:}\"", source);
 

@@ -8,6 +8,7 @@ pub mod graph;
 use std::collections::HashMap;
 use self::re::*;
 use std::fmt;
+use std::io;
 use crate::utils::*;
 use crate::parser::functor::REParser;
 
@@ -144,57 +145,104 @@ pub fn tokenize(src: &str, rules: &Vec<RegularRule>) -> Result<Vec<Token>, ()> {
     Ok(tokens)
 }
 
-pub fn read_config(path: &str) -> Vec<RegularRule> {
-    if let Ok(string) = read_file(path) {
-        let mut rules = Vec::new();
-        let configs: Vec<&str> = string.split('\n').into_iter().collect();
+pub fn read_config(path: &str) -> Result<Vec<RegularRule>, io::Error> {
+    let string = read_file(path)?;
+    let mut rules = Vec::new();
+    let configs: Vec<&str> = string.split('\n').into_iter().collect();
 
-        let charmap: Vec<char> = (0..255).map(|x: u8| x as char).collect();
-        // let charmap: Vec<char> = "'| |,|\r|\n|\t|{|}|*|+|/|=|(|)|@|:|.|-|<|>|;|\\|\"|0|1|2|3|4|5|6|7|8|9|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|_".split('|').map(|x| x.chars().next().unwrap()).collect();
-        let mut alias: HashMap<String, RegularExpression> = HashMap::new();
-        let mut flag = false;
+    let charmap: Vec<char> = (0..255).map(|x: u8| x as char).collect();
+    // let charmap: Vec<char> = "'| |,|\r|\n|\t|{|}|*|+|/|=|(|)|@|:|.|-|<|>|;|\\|\"|0|1|2|3|4|5|6|7|8|9|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|_".split('|').map(|x| x.chars().next().unwrap()).collect();
+    let mut alias: HashMap<String, RegularExpression> = HashMap::new();
+    let mut flag = false;
 
-        for config in configs {
-            // println!("Parsing: {:?}", config);
-            if config.trim().is_empty() || config.starts_with('#') { continue; }
-            if config.starts_with('%') {
-                flag = true;
-                continue;
-            }
-            let mut ty = config.split_whitespace().next().unwrap().to_string();
-            
-            let greedy = if ty.ends_with('?') {
-                ty = ty[0..ty.len()-1].to_string();
-                false } else { true };
-
-            let ignore = if ty.starts_with('-') {
-                ty = ty[1..ty.len()].to_string();
-                true } else { false };
-
-            let re = config.split_whitespace().skip(1).collect::<Vec<&str>>().join(" ");
-            let re = RegularExpression::parse(&re, &alias).expect(&format!("Unable to resolve regular rule [{:}]", ty));
-
-            // let mut re = REParser::parse_from_str(re.as_str()).expect(&format!("Unable to resolve regular rule [{:}]", ty));
-            // re.apply_alias(&alias);
-
-
-            // println!("{:?}", re);
-            if flag {
-                // println!("{:?}", dfa::construct_dfa(&re, &charmap));
-                rules.push(RegularRule {
-                    name: ty,
-                    expr: dfa::construct_dfa(&re, &charmap),
-                    greedy: greedy,
-                    ignore: ignore,
-                });
-            } else {
-                alias.insert(ty, re);
-            }
+    for config in configs {
+        // println!("Parsing: {:?}", config);
+        if config.trim().is_empty() || config.starts_with('#') { continue; }
+        if config.starts_with('%') {
+            flag = true;
+            continue;
         }
+        let mut ty = config.split_whitespace().next().unwrap().to_string();
+        
+        let greedy = if ty.ends_with('?') {
+            ty = ty[0..ty.len()-1].to_string();
+            false } else { true };
 
-        rules
-    } else {
-        panic!("Cannot open config");
+        let ignore = if ty.starts_with('-') {
+            ty = ty[1..ty.len()].to_string();
+            true } else { false };
+
+        let re = config.split_whitespace().skip(1).collect::<Vec<&str>>().join(" ");
+        let re = RegularExpression::parse(&re, &alias).expect(&format!("Unable to resolve regular rule [{:}]", ty));
+
+        // let mut re = REParser::parse_from_str(re.as_str()).expect(&format!("Unable to resolve regular rule [{:}]", ty));
+        // re.apply_alias(&alias);
+
+
+        // println!("{:?}", re);
+        if flag {
+            // println!("{:?}", dfa::construct_dfa(&re, &charmap));
+            rules.push(RegularRule {
+                name: ty,
+                expr: dfa::construct_dfa(&re, &charmap),
+                greedy: greedy,
+                ignore: ignore,
+            });
+        } else {
+            alias.insert(ty, re);
+        }
     }
+    Ok(rules)
+}
+
+
+pub fn read_config_external(path: &str) -> Result<Vec<RegularRule>, io::Error> {
+    let string = read_file(path)?;
+    let mut rules = Vec::new();
+    let configs: Vec<&str> = string.split('\n').into_iter().collect();
+
+    let charmap: Vec<char> = (0..255).map(|x: u8| x as char).collect();
+    // let charmap: Vec<char> = "'| |,|\r|\n|\t|{|}|*|+|/|=|(|)|@|:|.|-|<|>|;|\\|\"|0|1|2|3|4|5|6|7|8|9|a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z|_".split('|').map(|x| x.chars().next().unwrap()).collect();
+    let mut alias: HashMap<String, RegularExpression> = HashMap::new();
+    let mut flag = false;
+
+    for config in configs {
+        // println!("Parsing: {:?}", config);
+        if config.trim().is_empty() || config.starts_with('#') { continue; }
+        if config.starts_with('%') {
+            flag = true;
+            continue;
+        }
+        let mut ty = config.split_whitespace().next().unwrap().to_string();
+        
+        let greedy = if ty.ends_with('?') {
+            ty = ty[0..ty.len()-1].to_string();
+            false } else { true };
+
+        let ignore = if ty.starts_with('-') {
+            ty = ty[1..ty.len()].to_string();
+            true } else { false };
+
+        let re = config.split_whitespace().skip(1).collect::<Vec<&str>>().join(" ");
+        // let re = RegularExpression::parse(&re, &alias).expect(&format!("Unable to resolve regular rule [{:}]", ty));
+
+        let mut re = REParser::parse_from_str(re.as_str()).expect(&format!("Unable to resolve regular rule [{:}]", ty));
+        re.apply_alias(&alias);
+
+
+        // println!("{:?}", re);
+        if flag {
+            // println!("{:?}", dfa::construct_dfa(&re, &charmap));
+            rules.push(RegularRule {
+                name: ty,
+                expr: dfa::construct_dfa(&re, &charmap),
+                greedy: greedy,
+                ignore: ignore,
+            });
+        } else {
+            alias.insert(ty, re);
+        }
+    }
+    Ok(rules)
 }
 

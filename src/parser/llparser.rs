@@ -189,7 +189,8 @@ pub fn parse(src: &[Token], grammar: &Grammar) -> Result<Node, Vec<ParseError>> 
         if DEBUG!() { println!("{:?}\n {:?} : {:?}", stack, term, if next == src.len() { FINISH_TOKEN.to_string() } else { format!("{:?}", src[next]) }); }
         match term {
             Term::NonTerminal { name, .. } => {
-                if let Some(p) = table.get(&name).unwrap().get(&if next == src.len() { Term::terminal(FINISH_TOKEN) } else { Term::from(&src[next]) }) {
+                if let Some(p) = table.get(&name).unwrap().get(&if next == src.len() { Term::terminal(FINISH_TOKEN) } else { Term::from(&src[next]) })
+                    .or(table.get(&name).unwrap().get(&if next == src.len() { Term::terminal(FINISH_TOKEN) } else { Term::terminal(src[next].type_.as_str()) })) {
                     let node = Node {
                         value: NodeType::NonTerminal(NonTerminal {
                             type_: name.clone(),

@@ -33,7 +33,7 @@ impl fmt::Display for LRAction {
 pub type LRTable = Vec<HashMap<Term, LRAction>>;
 
 
-pub type LRAhead = Vec<Term>;
+pub type LRAhead = HashSet<Term>;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LRItem {
@@ -66,27 +66,19 @@ pub struct LRItems{
 impl LRItems {
     fn push(&mut self, item: LRItem, ahead: Term) -> bool {
         let mut ret = false;
-        if let Some(v) = self.get_mut(&item) {
-            if !v.contains(&ahead) {
-                v.push(ahead);
-                ret = true;
-            }
-            return ret;
+        if let Some(v) = self.get_mut(&item) {                
+            return v.insert(ahead);
         }        
-        self.insert(item, vec![ahead]);
+        self.insert(item, set![ahead]);
         true
     }
     
     fn extend(&mut self, item: LRItem, ahead: LRAhead) -> bool {
         let mut ret = false;
-        if let Some(v) = self.get_mut(&item) {
-            for ahead in ahead {
-                if !v.contains(&ahead) {
-                    v.push(ahead);
-                    ret = true;
-                }
-            }
-            return ret;
+        if let Some(mut v) = self.get_mut(&item) {
+            let len = v.len();
+            v.extend(ahead);
+            return v.len() > len;
         }
         self.insert(item, ahead);
         true
@@ -129,7 +121,7 @@ impl DerefMut for LRItems {
 
 #[derive(Debug, Clone, Eq, PartialEq, Default)]
 struct TerminalSet {
-    items: Vec<Term>
+    items: HashSet<Term>
 }
 
 impl TerminalSet {
@@ -140,21 +132,13 @@ impl TerminalSet {
     fn append(&mut self, rhs: &Self) -> bool {
         let mut ret = false;
         for item in &rhs.items {
-            if !self.items.contains(item) { 
-                self.items.push(item.clone());
-                ret = true;
-            }
+            ret = self.items.insert(item.clone()) || ret;
         }
         ret
     }
 
     fn push(&mut self, rhs: Term) -> bool {
-        if !self.items.contains(&rhs) {
-            self.items.push(rhs);
-            true
-        } else {
-            false
-        }
+        self.items.insert(rhs)
     }
 
     fn append_epsilon(&mut self) -> bool {
@@ -162,12 +146,7 @@ impl TerminalSet {
     }
     
     fn remove_epsilon(&mut self) -> bool {
-        if let Some(pos) = self.items.iter().position(|x| x == &Term::terminal(EPSILON_TOKEN.to_string())) {
-            self.items.remove(pos);
-            true
-        } else {
-            false
-        }
+        self.items.remove(&Term::terminal(EPSILON_TOKEN.to_string()))
     }
 
     fn contains_epsilon(&self) -> bool {
@@ -392,7 +371,7 @@ pub fn construct_lalr_1(grammar: &Grammar) -> StateTransferGraph<LRItems, Term> 
             ..Default::default()
         },
         pos: 0,
-    } => vec![Term::terminal(FINISH_TOKEN)]] };
+    } => set![Term::terminal(FINISH_TOKEN)]] };
 
     let start = graph.add_state_with_data(closure(&start));
     graph.mark_as_start(start);
@@ -596,7 +575,7 @@ pub fn parse_with_table(src: &[Token], table: &LRTable) -> Result<Node, ParseErr
         if DEBUG!() { println!("#{:} Step: [{:}, {:}]", next, curr_state, token.type_); }
         // Shift
 
-        match if let Some(action) = table[curr_state].get(&Term::from(&token)) { Some(action) } else { table[curr_state].get(&Term::terminal(token.type_.as_str())) } {
+        match table[curr_state].get(&Term::from(&token)).or(table[curr_state].get(&Term::terminal(token.type_.as_str()))) {
             Some(LRAction::Shift(next_state)) => {
                 stack.push(StackItem::Terminal(token.clone()));
                 stack.push(StackItem::State(*next_state));

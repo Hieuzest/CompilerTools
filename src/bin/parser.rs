@@ -1,7 +1,5 @@
-
-
-pub static mut DEBUG: bool = false;
-pub static mut VERBOSE: bool = false;
+#[macro_use]
+extern crate coolc;
 
 use coolc::utils::*;
 use coolc::lexer;
@@ -36,14 +34,14 @@ fn main() {
     let mut verbose = false;
     let mut test = false;
     let mut do_lexer = false;
-    let mut lexer_grammar_config = "ebnf.lex".to_string();
-    let mut lexer_input_config = "cool.lex".to_string();
-    let mut parser_config = "cool.ebnf".to_string();
+    let mut lexer_grammar_config = get_env_var("PARSER_GRAMMAR_LEXER_CONFIG", "ebnf.lex");
+    let mut lexer_input_config = get_env_var("PARSER_LEXER_CONFIG", "cool.lex");
+    let mut parser_config = get_env_var("PARSER_CONFIG", "cool.ebnf");
     let mut input_file = String::new();
-    let mut lexer_input_model = String::new();
+    let mut lexer_input_model = get_env_var("PARSER_LEXMODEL", "");
     let mut lexer_output_model = String::new();
-    let mut lexer_input_tokens = String::new();
-    let mut input_model = String::new();
+    let mut lexer_input_tokens = get_env_var("PARSER_TOKENS", "");
+    let mut input_model = get_env_var("PARSER_LRTABLE", "");
     let mut output_model = String::new();
     let mut output_file = String::new();
 
@@ -92,8 +90,8 @@ fn main() {
     }
 
     /* Initilize Parser */
-    let rules = lexer::read_config(&lexer_grammar_config);
-    let tokens: Vec<Token> = lexer::tokenize(read_file(&parser_config).unwrap().as_str(), &rules).unwrap()
+    let rules = lexer::read_config(&lexer_grammar_config).expect(&format!("Cannot open file: {:} as PARSER_GRAMMAR_LEXER_CONFIG", lexer_grammar_config));
+    let tokens: Vec<Token> = lexer::tokenize(read_file(&parser_config).expect(&format!("Cannot open file: {:} as PARSER_CONFIG", parser_config)).as_str(), &rules).unwrap()
         .into_iter()
         .map(|mut t| {if t.type_.as_str()=="Token" { t.value_ = t.value_[1..t.value_.len()-1].to_string() } t})
         .map(|mut t| {if t.type_.as_str()=="SpecialSequence" { t.value_ = t.value_[1..t.value_.len()-1].to_string() } t})
@@ -109,11 +107,12 @@ fn main() {
     /* Get Tokens */
 
     let input_tokens: Vec<Token> = if lexer_input_tokens.is_empty() {
-        let input_lexer_rules = if lexer_input_model.is_empty() { lexer::read_config(lexer_input_config.as_str()) } else { serde_yaml::from_str(&read_file(lexer_input_model.as_str()).unwrap()).expect("Deserialize error") };
+        let input_lexer_rules = if lexer_input_model.is_empty() { lexer::read_config(lexer_input_config.as_str()).expect(&format!("Cannot open file: {:} as PARSER_LEXER_CONFIG", lexer_input_config)) } 
+            else { serde_yaml::from_str(&read_file(lexer_input_model.as_str()).expect(&format!("Cannot open file: {:} as PARSER_LEXER_CONFIG", lexer_input_model))).expect("Deserialize error") };
         if !lexer_output_model.is_empty() { write_file(lexer_output_model.as_str(), serde_yaml::to_string(&input_lexer_rules).expect("Serialize error")).unwrap(); }
-        lexer::tokenize(read_file(&input_file).unwrap().as_str(), &input_lexer_rules).unwrap()
+        lexer::tokenize(read_file(&input_file).expect("Cannot open source file").as_str(), &input_lexer_rules).unwrap()
     } else {
-        serde_yaml::from_str(&read_file(lexer_input_tokens.as_str()).unwrap()).expect("Deserialize error")
+        serde_yaml::from_str(&read_file(lexer_input_tokens.as_str()).expect(&format!("Cannot open file: {:} as PARSER_TOKENS", lexer_input_tokens))).expect("Deserialize error")
     };
 
     if do_lexer {
@@ -156,18 +155,19 @@ fn main() {
         },
         Some(SupportedParsers::LALR) => {
             // let graph = if input_model.is_empty() { lrparser::construct_lalr_1(&grammar) } else { serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error") };
-            let table = if input_model.is_empty() { lrparser::construct_table(&lrparser::construct_lalr_1(&grammar)).unwrap() } else { serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error") };
+            let table = if input_model.is_empty() { lrparser::construct_table(&lrparser::construct_lalr_1(&grammar)).unwrap() } else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as PARSER_LRTABLE", input_model))).expect("Deserialize error") };
             if !output_model.is_empty() { write_file(output_model.as_str(), serde_yaml::to_string(&table).expect("Serialize error")).unwrap(); }
             let n = lrparser::parse_with_table(&input_tokens, &table).unwrap();
             transform::retrieve_unwrap(n)
         },
         Some(SupportedParsers::LR) => {
-            let graph = if input_model.is_empty() { lrparser::construct_lr_0(&grammar) } else { serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error") };
+            let graph = if input_model.is_empty() { lrparser::construct_lr_0(&grammar) } else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as PARSER_LRTABLE", input_model))).expect("Deserialize error") };
             // let table = if input_model.is_empty() { lrparser::construct_table(&lrparser::construct_lr_0(&grammar)).unwrap() } else { serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error") };
             if !output_model.is_empty() { write_file(output_model.as_str(), serde_yaml::to_string(&graph).expect("Serialize error")).unwrap(); }
             let n = lrparser::parse_with_graph(&input_tokens, &graph).unwrap();
             transform::retrieve_unwrap(n)
-        },        _ => panic!("Parser not specfied")
+        },
+        _ => panic!("Parser not specfied")
     };
 
 

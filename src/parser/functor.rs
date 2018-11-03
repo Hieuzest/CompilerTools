@@ -5,6 +5,7 @@ use super::utils::*;
 use crate::lexer::re::{SingleToken, RegularExpression};
 use super::lrparser;
 use super::transform;
+use std::env;
 
 pub struct REParser {
 
@@ -28,16 +29,16 @@ impl REParser {
     }
 
     pub fn parse_from_str(s: &str) -> Result<RegularExpression, ()> {
-        let lexer_input_model = "re.lexmodel".to_string();
-        let input_model = "re.lrtable".to_string();
+        let lexer_input_model = get_env_var("RE_LEXMODEL", "re.lexmodel");
+        let input_model = get_env_var("RE_LRTABLE", "re.lrtable");
 
         let input_tokens: Vec<Token> = {
-            let input_lexer_rules = serde_yaml::from_str(&read_file(lexer_input_model.as_str()).unwrap()).expect("Deserialize error");
+            let input_lexer_rules = serde_yaml::from_str(&read_file(lexer_input_model.as_str()).expect(&format!("Cannot open file: {:} as RE_LEXMODEL", lexer_input_model))).expect("Deserialize error");
             lexer::tokenize(s, &input_lexer_rules).unwrap()
         };
 
 
-        let table = serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error");
+        let table = serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as RE_LRTABLE", input_model))).expect("Deserialize error");
         let n = lrparser::parse_with_table(&input_tokens, &table).unwrap();
         let n = transform::retrieve_unwrap(n);
         REParser::parse(&n)
@@ -151,23 +152,6 @@ impl REParser {
                         },
                         _ => {}
                     },
-                    // "CharTerm" => match value_.as_str() {
-                    //     "char" => {
-                    //         return REParser::parse(&node.childs[0]);
-                    //     },
-                    //     "charset" => {
-                    //         let mut curr = if let NodeType::Terminal(Token { value_, .. }) = &node.childs[0].value { value_.chars().next().unwrap() } else { return Err(()) };
-                    //         let end = if let NodeType::Terminal(Token { value_, .. }) = &node.childs[2].value { value_.chars().next().unwrap() } else { return Err(()) };
-                    //         let mut set = Vec::new();
-                    //         while curr <= end {
-					// 		    set.push(RegularExpression::Atomic{ id: curr });
-					// 		    curr = (curr as u8 + 1) as char;
-                    //         }
-                    //         let ret = RegularExpression::Union { operands: set };
-                    //         return Ok(ret);
-                    //     },
-                    //     _ => {}
-                    // },
                     _ => {}
                 }
             },
