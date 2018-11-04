@@ -24,7 +24,7 @@ macro_rules! VERBOSE {
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 enum SupportedParsers {
-    LL, LR, RD, LALR
+    LL, LR, RD, LALR, GLR
 }
 
 fn main() {
@@ -35,8 +35,8 @@ fn main() {
     let mut test = false;
     let mut do_lexer = false;
     let mut lexer_grammar_config = get_env_var("PARSER_GRAMMAR_LEXER_CONFIG", "ebnf.lex");
-    let mut lexer_input_config = get_env_var("PARSER_LEXER_CONFIG", "cool.lex");
-    let mut parser_config = get_env_var("PARSER_CONFIG", "cool.ebnf");
+    let mut lexer_input_config = get_env_var("PARSER_LEXER_CONFIG", "examples/cool/cool.lex");
+    let mut parser_config = get_env_var("PARSER_CONFIG", "examples/cool/cool.ebnf");
     let mut input_file = String::new();
     let mut lexer_input_model = get_env_var("PARSER_LEXMODEL", "");
     let mut lexer_output_model = String::new();
@@ -60,7 +60,8 @@ fn main() {
             .add_option(&["--rd"], StoreConst(Some(SupportedParsers::RD)), "Using RD Parser")
             .add_option(&["--ll"], StoreConst(Some(SupportedParsers::LL)), "Using LL(1) Parser")
             .add_option(&["--lr"], StoreConst(Some(SupportedParsers::LALR)), "Using LALR(1) Parser")
-            .add_option(&["--lr0"], StoreConst(Some(SupportedParsers::LR)), "Using LR(0) Parser");
+            .add_option(&["--lr0"], StoreConst(Some(SupportedParsers::LR)), "Using LR(0) Parser")
+            .add_option(&["--glr"], StoreConst(Some(SupportedParsers::GLR)), "Using GLR(1) Parser");
         ap.refer(&mut lexer_grammar_config)
             .add_option(&["-e", "--ebnfconfig"], Store, "EBNF lexer specfication file");
         ap.refer(&mut lexer_input_config)
@@ -158,6 +159,13 @@ fn main() {
             let table = if input_model.is_empty() { lrparser::construct_table(&lrparser::construct_lalr_1(&grammar)).unwrap() } else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as PARSER_LRTABLE", input_model))).expect("Deserialize error") };
             if !output_model.is_empty() { write_file(output_model.as_str(), serde_yaml::to_string(&table).expect("Serialize error")).unwrap(); }
             let n = lrparser::parse_with_table(&input_tokens, &table).unwrap();
+            transform::retrieve_unwrap(n)
+        },
+        Some(SupportedParsers::GLR) => {
+            let graph = if input_model.is_empty() { lrparser::construct_lalr_1(&grammar) } else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as PARSER_LRTABLE", input_model))).expect("Deserialize error") };
+            // let table = if input_model.is_empty() { lrparser::construct_table(&lrparser::construct_lr_0(&grammar)).unwrap() } else { serde_yaml::from_str(&read_file(input_model.as_str()).unwrap()).expect("Deserialize error") };
+            if !output_model.is_empty() { write_file(output_model.as_str(), serde_yaml::to_string(&graph).expect("Serialize error")).unwrap(); }
+            let n = glrparser::parse_with_graph(&input_tokens, &graph).unwrap();
             transform::retrieve_unwrap(n)
         },
         Some(SupportedParsers::LR) => {

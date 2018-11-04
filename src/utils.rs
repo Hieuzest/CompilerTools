@@ -4,6 +4,8 @@ use std::io::prelude::*;
 use std::io;
 use std::env;
 
+pub mod tree;
+
 pub use crate::DEBUG;
 macro_rules! DEBUG {
     () => { unsafe{ DEBUG } };

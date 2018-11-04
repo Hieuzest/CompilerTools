@@ -29,8 +29,8 @@ impl REParser {
     }
 
     pub fn parse_from_str(s: &str) -> Result<RegularExpression, ()> {
-        let lexer_input_model = get_env_var("RE_LEXMODEL", "re.lexmodel");
-        let input_model = get_env_var("RE_LRTABLE", "re.lrtable");
+        let lexer_input_model = get_env_var("RE_LEXMODEL", "examples/re/re.lexmodel");
+        let input_model = get_env_var("RE_LRTABLE", "examples/re/re.lrtable");
 
         let input_tokens: Vec<Token> = {
             let input_lexer_rules = serde_yaml::from_str(&read_file(lexer_input_model.as_str()).expect(&format!("Cannot open file: {:} as RE_LEXMODEL", lexer_input_model))).expect("Deserialize error");

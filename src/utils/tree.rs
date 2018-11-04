@@ -68,3 +68,61 @@ impl<T: TreeNode> NodeZipper<T> {
         self.node
     }
 }
+
+
+#[derive(Debug, Clone, PartialEq, Hash, Serialize, Deserialize)]
+pub struct Node<T> {
+    pub value: T,
+    pub childs: Vec<Node<T>>,
+    pub index: usize
+}
+
+impl<T> Node<T> {
+    pub fn new(data: T) -> Self {
+        Node {
+            value: data,
+            childs: Vec::new(),
+            index: 0
+        }
+    }
+}
+
+impl<T> TreeNode for Node<T> {
+    type Data = T;
+
+    fn data(&self) -> &Self::Data {
+        &self.value
+    }
+
+    fn data_mut(&mut self) -> &mut Self::Data {
+        &mut self.value
+    }
+
+    fn len(&self) -> usize {
+        self.childs.len()
+    }
+
+    fn get(&self, index: usize) -> Option<&Self> {
+        self.childs.get(index)
+    }
+
+    fn get_mut(&mut self, index: usize) -> Option<&mut Self> {
+        self.childs.get_mut(index)
+    }
+
+    fn remove(&mut self, index: usize) -> Self {
+        self.childs.remove(index)
+    }
+    
+    fn swap_remove(&mut self, index: usize) -> Self {
+        self.childs.swap_remove(index)
+    }
+
+    fn push(&mut self, rhs: Self) {
+        self.childs.push(rhs)
+    }
+
+    fn swap(&mut self, a: usize, b: usize) {
+        self.childs.swap(a, b)
+    }
+}

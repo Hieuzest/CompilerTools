@@ -37,8 +37,8 @@ pub type LRAhead = HashSet<Term>;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LRItem {
-    rule: Production,
-    pos: usize,
+    pub rule: Production,
+    pub pos: usize,
 }
 
 impl hash::Hash for LRItem {
@@ -65,7 +65,6 @@ pub struct LRItems{
 
 impl LRItems {
     fn push(&mut self, item: LRItem, ahead: Term) -> bool {
-        let mut ret = false;
         if let Some(v) = self.get_mut(&item) {                
             return v.insert(ahead);
         }        
@@ -74,8 +73,7 @@ impl LRItems {
     }
     
     fn extend(&mut self, item: LRItem, ahead: LRAhead) -> bool {
-        let mut ret = false;
-        if let Some(mut v) = self.get_mut(&item) {
+        if let Some(v) = self.get_mut(&item) {
             let len = v.len();
             v.extend(ahead);
             return v.len() > len;
@@ -316,10 +314,11 @@ pub fn construct_lalr_1(grammar: &Grammar) -> StateTransferGraph<LRItems, Term> 
     let mut graph: StateTransferGraph<LRItems, Term> = StateTransferGraph::new();
     let closure = |s: &LRItems| -> LRItems {
         let mut ret = s.clone();
+        let mut rset = ret.clone();
         let mut flag = true;
         while flag {
             let mut set = LRItems::default();
-            for (&LRItem { ref rule, ref pos }, ahead) in &*ret {
+            for (&LRItem { ref rule, ref pos }, ahead) in &*rset {
                 if pos < &rule.expr.terms.len() {
                     if let Term::NonTerminal { name, .. } = &rule.expr.terms[*pos] {
                         for ahead in ahead {
@@ -330,17 +329,16 @@ pub fn construct_lalr_1(grammar: &Grammar) -> StateTransferGraph<LRItems, Term> 
                             };
                             for p in &grammar.productions {
                                 if &p.name != name { continue; }
-                                for ahead in &f.items {
-                                    set.push(LRItem {
-                                        rule: p.clone(),
-                                        pos: 0,
-                                    }, ahead.clone());
-                                }
+                                set.extend(LRItem {
+                                    rule: p.clone(),
+                                    pos: 0,
+                                }, f.items.clone());
                             }
                         }
                     }
                 }
             }
+            rset = set.clone();
             flag = ret.extend_all(set);
         }
         ret
@@ -349,10 +347,8 @@ pub fn construct_lalr_1(grammar: &Grammar) -> StateTransferGraph<LRItems, Term> 
     let goto = |s: &LRItems, t: Term| -> LRItems {
         let mut ret = LRItems::default();
         for (&LRItem { ref rule, ref pos }, ahead) in s.deref() {
-            if pos < &rule.expr.terms.len() {
-                if rule.expr.terms[*pos] == t {
-                    ret.extend_all(closure(&LRItems { items: map![LRItem { rule: rule.clone(), pos: pos + 1} => ahead.clone()] }));
-                }
+            if pos < &rule.expr.terms.len() && rule.expr.terms[*pos] == t {
+                ret.extend_all(closure(&LRItems { items: map![LRItem { rule: rule.clone(), pos: pos + 1} => ahead.clone()] }));
             }
         }
         ret
@@ -445,14 +441,14 @@ pub fn parse_with_graph(src: &[Token], graph: &StateTransferGraph<LRItems, Term>
         } };
         let curr_state = if let Some(&StackItem::State(s)) = stack.last() { s } else { panic!("State not on top of stack !") };
 
-        if DEBUG!() { println!("#{:} Step: [{:}, {:}]", next, curr_state, token.type_); }
+        if DEBUG!() { println!("#{:} Step: [{:}, {:}]", next, curr_state, token); }
         // Shift
-        if let Some(next_state) = graph.get_transition(curr_state, Term::from(token.clone())) {
+        if let Some(next_state) = graph.get_transition(curr_state, Term::from(token.clone())).or(graph.get_transition(curr_state, Term::terminal(token.type_.clone()))) {
             let mut conflict = false;
             // Check shift-reduce conflict
             let mut shift_precedence = None;
             for (item, _) in &*graph.vertices[curr_state].data {
-                if item.pos < item.rule.expr.terms.len() && item.rule.expr.terms[item.pos] == Term::from(token.clone()) {
+                if item.pos < item.rule.expr.terms.len() && item.rule.expr.terms[item.pos].match_token(&token) {
                     if shift_precedence == None || shift_precedence.unwrap() > item.rule.precedence { shift_precedence = Some(item.rule.precedence); }
                 }
             }
@@ -461,11 +457,8 @@ pub fn parse_with_graph(src: &[Token], graph: &StateTransferGraph<LRItems, Term>
             for (item, ahead) in &*graph.vertices[curr_state].data {
                 if item.pos == item.rule.expr.terms.len() {
                     // Check lookahead
-                    if ahead.len() > 0 {
-                        if !ahead.contains(&Term::from(token.clone())) {
-                            continue;
-                        }
-                    }
+                    if ahead.len() > 0 && !ahead.contains(&Term::from(&token)) && !ahead.contains(&Term::terminal(token.type_.clone())) { continue; }
+
                     if DEBUG!() && VERBOSE!() { println!("SHIFT_REDUCE CONFLICT"); }
                     if item.rule.precedence < shift_precedence || (item.rule.precedence == shift_precedence && item.rule.associativity == Associativity::Left) {
                         conflict = true;
@@ -497,7 +490,7 @@ pub fn parse_with_graph(src: &[Token], graph: &StateTransferGraph<LRItems, Term>
         for (item, ahead) in &*graph.vertices[curr_state].data {
             if item.pos == item.rule.expr.terms.len() {
                 // Check lookahead
-                if ahead.len() > 0 && !ahead.contains(&Term::from(token.clone())) { continue; }
+                if ahead.len() > 0 && !ahead.contains(&Term::from(&token)) && !ahead.contains(&Term::terminal(token.type_.clone())) { continue; }
 
                 if reduce_item == None || reduce_item.as_ref().unwrap().rule.precedence > item.rule.precedence { 
                     if DEBUG!() && VERBOSE!() && reduce_item != None { println!("REDUCE_REDUCE CONFLICT"); }
@@ -648,7 +641,7 @@ pub fn construct_table(graph: &StateTransferGraph<LRItems, Term>) -> Result<LRTa
         let mut map = HashMap::<Term, (Production, LRAction)>::new();
         for (item, ahead) in &*graph.vertices[s].data {
             if item.pos < item.rule.expr.terms.len() {
-                let f = match  map.get(&item.rule.expr.terms[item.pos]) {
+                let f = match map.get(&item.rule.expr.terms[item.pos]) {
                     Some((rule, action @ LRAction::Reduce(..))) => {
                         if DEBUG!() { println!("DETECTED CONFLICT on {:} {:} : {:} {:}", s, item.rule.expr.terms[item.pos], LRAction::Shift(graph.get_transition(s, item.rule.expr.terms[item.pos].clone()).expect("No transition for item")), action); }
                         item.rule.precedence < rule.precedence || (item.rule.precedence == rule.precedence && item.rule.associativity == Associativity::Right)

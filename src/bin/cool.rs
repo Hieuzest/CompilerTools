@@ -1,9 +1,8 @@
 
-use coolc::lexer;
 use coolc::parser::*;
 use coolc::cool::beam::*;
 use coolc::utils::*;
-use argparse::{ArgumentParser, Store, StoreTrue, StoreConst};
+use argparse::{ArgumentParser, Store, StoreTrue};
 
 
 fn main() {

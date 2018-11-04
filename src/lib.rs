@@ -14,3 +14,4 @@ pub mod utils;
 pub mod lexer;
 pub mod parser;
 pub mod cool;
+pub mod scheme;

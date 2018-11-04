@@ -21,7 +21,8 @@ fn main() {
 
     let mut debug = false;
     let mut verbose = false;
-    let mut config = get_env_var("LEXER_CONFIG", "cool.lex");
+    let mut external = false;
+    let mut config = get_env_var("LEXER_CONFIG", "examples/cool/cool.lex");
     let mut input_model = get_env_var("LEXER_MODEL", "");
     let mut output_model = String::new();
     let mut source = String::new();
@@ -34,6 +35,8 @@ fn main() {
             .add_option(&["-d", "--debug"], StoreTrue, "Show debug messages");
         ap.refer(&mut verbose)
             .add_option(&["-v", "--verbose"], StoreTrue, "Show more info");
+        ap.refer(&mut external)
+            .add_option(&["-e", "--external"], StoreTrue, "Using external regex");
         ap.refer(&mut config)
             .add_option(&["-c", "--config"], Store, "Lexer specfication file");
         ap.refer(&mut input_model)
@@ -48,8 +51,13 @@ fn main() {
     }
 
 
-    let rules = if input_model.is_empty() { lexer::read_config(config.as_str()).expect(&format!("Cannot open file: {:} as LEXER_CONFIG", config)) } 
-        else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as LEXER_MODEL", input_model))).expect("Deserialize error") };
+    let rules = if input_model.is_empty() { 
+        if external {
+            lexer::read_config_external(config.as_str()).expect(&format!("Cannot open file: {:} as LEXER_CONFIG", config))
+        } else {
+            lexer::read_config(config.as_str()).expect(&format!("Cannot open file: {:} as LEXER_CONFIG", config)) 
+        } 
+    } else { serde_yaml::from_str(&read_file(input_model.as_str()).expect(&format!("Cannot open file: {:} as LEXER_MODEL", input_model))).expect("Deserialize error") };
     if !output_model.is_empty() { write_file(output_model.as_str(), serde_yaml::to_string(&rules).expect("Serialize error")).unwrap(); }
     let tokens = lexer::tokenize(read_file(source.as_str()).expect("Cannot open source file").as_str(), &rules);
 
