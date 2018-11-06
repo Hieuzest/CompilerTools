@@ -15,6 +15,18 @@ macro_rules! enter_env {
 }
 
 
+macro_rules! builtins(
+    { $($key:expr => $value:expr),+ } => {
+        {
+            let mut m = ::std::collections::HashMap::new();
+            $(
+                m.insert($key.to_string(), Datum::Builtin(Box::new($value)));
+            )+
+            m
+        }
+     };
+);
+
 #[derive(Debug, Default, Clone)]
 pub struct Enviroment {
     datas: Option<HashMap<String, Datum>>,
@@ -24,10 +36,18 @@ pub struct Enviroment {
 impl Enviroment {
 
     pub fn new() -> Self {
-        let mut m = HashMap::new();
-
-        m.insert("+".to_string(), Datum::Builtin(Box::new(core::add)));
-        m.insert("*".to_string(), Datum::Builtin(Box::new(core::mul)));
+        let m = builtins![
+            "=" => core::eq,
+            "<" => core::lt,
+            "<=" => core::le,
+            "+" => core::add,
+            "-" => core::sub,
+            "*" => core::mul,
+            "/" => core::div,
+            "car" => core::car,
+            "cdr" => core::cdr,
+            "list" => core::list
+        ];
 
         Enviroment {
             datas: Some(m),
@@ -49,7 +69,9 @@ impl Enviroment {
     }
 
     pub fn set(&mut self, name: &String, data: Datum) -> Result<Datum, RuntimeError> {
-        if let Some(d) = self.datas_mut().get_mut(name) {
+        if let None = self.datas {
+            Err(RuntimeError::new(format!("No variable named {:}", name)))
+        } else if let Some(d) = self.datas_mut().get_mut(name) {
             let old = d.clone();
             *d = data;
             Ok(old)
@@ -61,7 +83,9 @@ impl Enviroment {
     }
 
     pub fn find(&self, name: &String) -> Result<Datum, RuntimeError> {
-        if let Some(d) = self.datas().get(name) {
+        if let None = self.datas {
+            Err(RuntimeError::new(format!("No variable named {:}", name)))
+        } else if let Some(d) = self.datas().get(name) {
             Ok(d.clone())
         } else if let Some(p) = &self.parent {
             p.find(name)

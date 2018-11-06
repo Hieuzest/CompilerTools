@@ -375,6 +375,13 @@ impl Term {
         }
     }
 
+
+    /*
+     * There is two case that match token to terminal
+     * 1 - Token with type_ match to terminal with type_
+     * 2 - Token with type_ and value_ match to terminal with type_ and value_
+     */
+
     pub fn match_token(&self, rhs: &Token) -> bool {
         if let Term::Terminal { type_, value, .. } = self {
             type_ == &rhs.type_ && (value == &None || value.as_ref().unwrap() == &rhs.value_)
@@ -382,6 +389,10 @@ impl Term {
     }
 }
 
+
+/* 
+ * We don't care the metadata (unwrap etc.)
+ */
 
 impl PartialEq for Term {
     fn eq(&self, other: &Term) -> bool {

@@ -66,12 +66,13 @@ pub enum Datum {
     Character(char),
     String(String),
     Symbol(String),
-    Identifier(String),
     List(Vec<Datum>),
+    Pair(Box<Datum>, Box<Datum>),
     Abbreviation(AbbrevPrefix, Box<Datum>),
     Vector(Vec<Datum>),
     Builtin(Box<fn(Vec<Datum>) -> Result<Datum, RuntimeError>>),
     Lambda(LambdaExpression),
+    Syntax(SyntaxRule),
 }
 
 impl Datum {
@@ -86,15 +87,27 @@ pub struct LambdaExpression {
     pub expr: Box<Datum>
 }
 
+#[derive(Debug, Clone)]
+pub struct SyntaxRule {
+    pub formals: Vec<String>,
+    pub expr: Box<Datum>
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum SpecialForm {
+    Eval,
+    Apply,
     Begin,
     Define,
     Lambda,
     Set,
     Let,
+    Letstar,
+    Letrec,
     And,
     Or,
     Cond,
     If,
+    Quote,
+    DefineSyntax
 }
