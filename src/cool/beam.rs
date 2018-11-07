@@ -307,7 +307,7 @@ impl Default for CoolClass {
 	fn default() -> Self {
 		CoolClass {
 			name_: CoolTypename::default(),
-			inherit_: CoolEnviroment::object_type(),
+			inherit_: CoolEnvironment::object_type(),
 			attributes_: Vec::default(),
 			methods_: Vec::default(),
 			pos_: CoolPosition::default(),
@@ -402,14 +402,14 @@ pub type CoolClassInheritMap = HashMap<CoolTypename, Vec<CoolTypename>>;
 
 
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct CoolEnviroment{
+pub struct CoolEnvironment{
 	pub objects_: HashMap<CoolIdentifier, CoolTypename>,
 	pub methods_: HashMap<CoolTypename, HashMap<CoolIdentifier, Vec<CoolTypename>>>,
 	pub self_type_: CoolTypename,
 	pub inherits_ : HashMap<CoolTypename, CoolTypename>,
 }
 
-impl CoolEnviroment {
+impl CoolEnvironment {
 	
 	pub fn string_type() -> CoolTypename {
 		"String".to_string()
@@ -452,13 +452,13 @@ impl CoolEnviroment {
 	}
 
 	pub fn get_method(&self, cls: &CoolTypename, id: &CoolIdentifier) -> Result<Vec<CoolTypename>, CoolCompileError> {
-		let mut cls = if cls == &CoolEnviroment::self_type() { self.self_type_.clone() } else { cls.clone() };
+		let mut cls = if cls == &CoolEnvironment::self_type() { self.self_type_.clone() } else { cls.clone() };
 		loop {
 			if let Some(ms) = self.methods_.get(&cls) {
 				if let Some(t) = ms.get(id) {
 					return Ok(t.clone())
 				} else {
-					if cls == CoolEnviroment::object_type() { break; }
+					if cls == CoolEnvironment::object_type() { break; }
 					if let Ok(c) = self.get_inherited(&cls) {
 						cls = c;
 					} else { break; }
@@ -485,12 +485,12 @@ impl CoolEnviroment {
 	}
 
 	pub fn is_type(&self, ty: &CoolTypename, tys: &CoolTypename) -> bool {
-		check_default!(&ty, &CoolEnviroment::self_type(), self.get_self_type());
-		check_default!(&tys, &CoolEnviroment::self_type(), self.get_self_type());
-		if ty == tys || ty == CoolEnviroment::dynamic_type() { return true; }
+		check_default!(&ty, &CoolEnvironment::self_type(), self.get_self_type());
+		check_default!(&tys, &CoolEnvironment::self_type(), self.get_self_type());
+		if ty == tys || ty == CoolEnvironment::dynamic_type() { return true; }
 		let mut ty = ty.clone();
 		loop {
-			if ty == CoolEnviroment::object_type() { break; }
+			if ty == CoolEnvironment::object_type() { break; }
 			if let Ok(t) = self.get_inherited(&ty) {
 				ty = t;
 				if ty == tys { return true; }
@@ -502,13 +502,13 @@ impl CoolEnviroment {
 	pub fn join_type(&self, ty1: &CoolTypename, ty2: &CoolTypename) -> CoolTypename {
 		if ty1 == &CoolTypename::default() { return ty2.clone() }
 		if ty2 == &CoolTypename::default() { return ty1.clone() }
-		check_default!(&ty1, &CoolEnviroment::self_type(), self.get_self_type());
-		check_default!(&ty2, &CoolEnviroment::self_type(), self.get_self_type());
+		check_default!(&ty1, &CoolEnvironment::self_type(), self.get_self_type());
+		check_default!(&ty2, &CoolEnvironment::self_type(), self.get_self_type());
 		let mut map = Vec::new();
 		let mut ty = ty1;
 		map.push(ty.clone());
 		loop {
-			if ty == CoolEnviroment::object_type() { break; }
+			if ty == CoolEnvironment::object_type() { break; }
 			if let Ok(t) = self.get_inherited(&ty) {
 				ty = t;
 				map.push(ty.clone())

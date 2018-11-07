@@ -9,211 +9,111 @@ fn gcd(a: i64, b: i64) -> i64 {
     a
 }
 
+pub fn not(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Boolean(b) = *operands.borrow().car()?.borrow() {
+        return Ok(Datum::Boolean(!b).wrap());
+    }
+    Err(RuntimeError::new("Not boolean"))
+}
 
-pub fn eq(operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn eq2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a == b)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a as f64 == b)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a * b2 == b1)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a == b as f64)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a == b)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a * b2 as f64 == b1 as f64)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a1 == b * a2)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a1 as f64 == b * a2 as f64)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a1 * b2 == b1 * a2)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+pub fn eq(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Boolean(x == y).wrap());
         }
     }
-    eq2(operands[0].clone(), operands[1].clone())
+    Err(RuntimeError::new("Not numericial"))
 }
 
 
-pub fn lt(operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn lt2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a < b)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean((a as f64) < b)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a * b2 < b1)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a < b as f64)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a < b)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a * (b2 as f64) < b1 as f64)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a1 < b * a2)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean((a1 as f64) < b * a2 as f64)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a1 * b2 < b1 * a2)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+pub fn lt(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Boolean(x < y).wrap());
         }
     }
-    lt2(operands[0].clone(), operands[1].clone())
+    Err(RuntimeError::new("Not numericial"))
 }
 
-pub fn le(operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn le2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a <= b)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a as f64 <= b)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a * b2 <= b1)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a <= b as f64)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a <= b)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a * b2 as f64 <= b1 as f64)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Boolean(a1 <= b * a2)),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Boolean(a1 as f64 <= b * a2 as f64)),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Boolean(a1 * b2 <= b1 * a2)),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+
+pub fn le(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Boolean(x <= y).wrap());
         }
     }
-    le2(operands[0].clone(), operands[1].clone())
+    Err(RuntimeError::new("Not numericial"))
 }
 
-pub fn add(operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn add2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Integer(a+b))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a as f64+b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational(a*b2+b1, b2))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Real(a+b as f64))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a+b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Real(b1 as f64/b2 as f64 + a))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Rational(b*a2+a1, a2))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a1 as f64/a2 as f64 + b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational((a1*b2+a2*b1)/gcd(a2, b2), a2*b2/gcd(a2, b2)))), // TODO: fold
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+pub fn add(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Number(x + y).wrap());
         }
     }
-    operands.into_iter().try_fold(Datum::Number(Number::Integer(0)), add2)
+    Err(RuntimeError::new("Not numericial"))
 }
-
-
-pub fn sub(mut operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn sub2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Integer(a-b))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a as f64-b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational(a*b2-b1, b2))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Real(a-b as f64))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a-b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Real(b1 as f64/b2 as f64 - a))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Rational(b*a2-a1, a2))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a1 as f64/a2 as f64 - b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational((a1*b2-a2*b1)/gcd(a2, b2), a2*b2/gcd(a2, b2)))), // TODO: fold
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+pub fn sub(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Number(x - y).wrap());
         }
     }
-    let first = operands.remove(0);
-    operands.into_iter().try_fold(first, sub2)
+    Err(RuntimeError::new("Not numericial"))
 }
 
-pub fn mul(operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn mul2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Integer(a*b))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a as f64*b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational(a*b1, b2))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Real(a*b as f64))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a*b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Real(b1 as f64*a/b2 as f64))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Rational(b*a1, a2))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a1 as f64*b/a2 as f64))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational(a1*b1/gcd(a1*b1, a2*b2), a2*b2/gcd(a1*b1, a2*b2)))), // TODO: fold
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+pub fn mul(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Number(x * y).wrap());
         }
     }
-    operands.into_iter().try_fold(Datum::Number(Number::Integer(1)), mul2)
+    Err(RuntimeError::new("Not numericial"))
 }
 
-pub fn div(mut operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    fn div2(a: Datum, b: Datum) -> Result<Datum, RuntimeError> {
-        match a {
-            Datum::Number(Number::Integer(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(if gcd(a, b) == b { Number::Integer(a/b) } else { Number::Rational(a, b) } )),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a as f64/b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational(a*b2, b1))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Real(a)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Real(a/b as f64))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a/b))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Real(b2 as f64*a/b1 as f64))),
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            Datum::Number(Number::Rational(a1, a2)) => match b {
-                Datum::Number(Number::Integer(b)) => Ok(Datum::Number(Number::Rational(a1, a2*b))),
-                Datum::Number(Number::Real(b)) => Ok(Datum::Number(Number::Real(a1 as f64*b/a2 as f64))),
-                Datum::Number(Number::Rational(b1, b2)) => Ok(Datum::Number(Number::Rational(a1*b2/gcd(a1*b2, a2*b1), a2*b1/gcd(a1*b2, a2*b1)))), // TODO: fold
-                _ => Err(RuntimeError::new("Not number"))
-            },
-            _ => Err(RuntimeError::new("Not number"))
+pub fn div(operands: Value) -> Result<Value, RuntimeError> {
+    if let Datum::Number(x) = *operands.borrow().car()?.borrow() {
+        if let Datum::Number(y) = *operands.borrow().cadr()?.borrow() {
+            return Ok(Datum::Number(x / y).wrap());
         }
     }
-    let first = operands.remove(0);
-    operands.into_iter().try_fold(first, div2)
+    Err(RuntimeError::new("Not numericial"))
 }
 
-pub fn car(mut operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    Ok(operands.remove(0))
-}
-
-pub fn cdr(mut operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    operands.remove(0);
-    Ok(Datum::List(operands))
-}
-
-pub fn list(operands: Vec<Datum>) -> Result<Datum, RuntimeError> {
-    Ok(Datum::List(operands))
+pub fn car(operands: Value) -> Result<Value, RuntimeError> {
+    operands.borrow().car()?.borrow().car()
 }
 
 
+pub fn cdr(operands: Value) -> Result<Value, RuntimeError> {
+    operands.borrow().car()?.borrow().cdr()
+}
+
+pub fn cadr(operands: Value) -> Result<Value, RuntimeError> {
+    operands.borrow().car()?.borrow().cadr()
+}
+
+pub fn list(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(operands)
+}
+
+pub fn cons(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(Datum::Pair(operands.borrow().car()?, operands.borrow().cadr()?).wrap())
+}
+
+pub fn is_null(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(Datum::Boolean(operands.borrow().car()?.borrow().is_nil()).wrap())
+}
+
+pub fn is_eq(operands: Value) -> Result<Value, RuntimeError> {
+    // if let Datum::Symbol(ref x) = *operands.borrow().car()?.borrow() {
+    //     if let Datum::Symbol(ref y) = *operands.borrow().cadr()?.borrow() {
+    //         if x == y {
+    //             return Ok(Datum::Boolean(true).wrap());
+    //         }
+    //     }
+    // }
+    let a = operands.borrow().car()?;
+    let d = operands.borrow().cadr()?;
+    return Ok(Datum::Boolean(&*a.borrow() as *const _ == &*d.borrow() as *const _).wrap());
+}

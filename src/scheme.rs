@@ -5,3 +5,4 @@ mod core;
 pub mod env;
 pub mod parser;
 pub mod engine;
+pub mod symbol;
