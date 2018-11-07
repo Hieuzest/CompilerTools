@@ -7,7 +7,6 @@ use coolc::lexer;
 use std::io::*;
 
 fn repl(rules: &Vec<lexer::RegularRule>) {
-    let mut symtable = self::scheme::symbol::SymbolTable::new();
     let env = self::scheme::env::Environment::new();
 
     let code = vec![
@@ -26,7 +25,7 @@ fn repl(rules: &Vec<lexer::RegularRule>) {
     ];
     for input in code {
         let tokens: Vec<Token> = lexer::tokenize(input, &rules).unwrap();
-        let program = self::scheme::parser::parse(&tokens, &mut symtable).unwrap();
+        let program = self::scheme::parser::parse(&tokens).unwrap();
         self::scheme::engine::eval(program, env.clone()).expect("inner install fail");
     }
 
@@ -47,7 +46,7 @@ fn repl(rules: &Vec<lexer::RegularRule>) {
 
         // println!("\t{:?}", tokens);
 
-        let program = if let Ok(p) = self::scheme::parser::parse(&tokens, &mut symtable) { p }
+        let program = if let Ok(p) = self::scheme::parser::parse(&tokens) { p }
         else {
             println!("Error: parsing");
             continue;
@@ -114,12 +113,10 @@ fn main() {
             serde_yaml::from_str(&read_file(lexer_input_tokens.as_str()).expect(&format!("Cannot open file: {:} as PARSER_TOKENS", lexer_input_tokens))).expect("Deserialize error")
         };
 
-        let program = self::scheme::parser::parse(&tokens, &mut self::scheme::symbol::SymbolTable::new()).unwrap();
+        let program = self::scheme::parser::parse(&tokens).unwrap();
         if debug { println!("{:?}", program); }
 
         let ret = self::scheme::engine::eval(program, self::scheme::env::Environment::new());
         println!("Answer: {:?}", ret.map(|x| x.borrow().clone()));
     }
-
-
 }

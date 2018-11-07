@@ -1,5 +1,6 @@
 use super::beam::*;
 use super::env::*;
+use super::symbol::*;
 use std::iter;
 use crate::utils::*;
 
@@ -97,35 +98,27 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                     }
                 },
                 Datum::SpecialForm(SpecialForm::SetCar) => {
-                    if let Datum::Symbol(ref id) = *d.borrow().car()?.borrow() {
-                        let value = eval(d.borrow().cadr()?, env.clone())?;
-                        let ptr = env.borrow().find(id)?;
-                        let pair = ptr.replace(Datum::Nil);
-                        if let Datum::Pair(a, d) = pair {
-                            ptr.replace(Datum::Pair(value, d));
-                            Ok(Datum::default().wrap())
-                        } else {
-                            ptr.replace(pair);
-                            Err(RuntimeError::new("variable not pair in set-car!"))
-                        }
+                    let list = eval(d.borrow().car()?, env.clone())?;
+                    let value = eval(d.borrow().cadr()?, env.clone())?;
+                    let pair = list.replace(Datum::Nil);
+                    if let Datum::Pair(a, d) = pair {
+                        list.replace(Datum::Pair(value, d));
+                        Ok(SymbolTable::unspecified())
                     } else {
-                        Err(RuntimeError::new("variable not specified in set!"))
+                        list.replace(pair);
+                        Err(RuntimeError::new("variable not pair in set-car!"))
                     }
                 },
                 Datum::SpecialForm(SpecialForm::SetCdr) => {
-                    if let Datum::Symbol(ref id) = *d.borrow().car()?.borrow() {
-                        let value = eval(d.borrow().cadr()?, env.clone())?;
-                        let ptr = env.borrow().find(id)?;
-                        let pair = ptr.replace(Datum::Nil);
-                        if let Datum::Pair(a, d) = pair {
-                            ptr.replace(Datum::Pair(a, value));
-                            Ok(Datum::default().wrap())
-                        } else {
-                            ptr.replace(pair);
-                            Err(RuntimeError::new("variable not pair in set-cdr!"))
-                        }
+                    let list = eval(d.borrow().car()?, env.clone())?;
+                    let value = eval(d.borrow().cadr()?, env.clone())?;
+                    let pair = list.replace(Datum::Nil);
+                    if let Datum::Pair(a, d) = pair {
+                        list.replace(Datum::Pair(a, value));
+                        Ok(SymbolTable::unspecified())
                     } else {
-                        Err(RuntimeError::new("variable not specified in set!"))
+                        list.replace(pair);
+                        Err(RuntimeError::new("variable not pair in set-cdr!"))
                     }
                 },         
                 Datum::SpecialForm(SpecialForm::Lambda) => {
@@ -145,7 +138,7 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                     let mut formals = d.clone();
                     while let Datum::Pair(ref ad, ref dd) = *formals.clone().borrow().car()?.borrow() {
                         let test = eval(ad.clone(), env.clone())?;
-                        if let Datum::Boolean(true) = *test.clone().borrow() {
+                        if test.borrow().is_true() {
                             return eval(dd.borrow().car()?, env.clone());
                         } else if let Datum::SpecialForm(SpecialForm::Else) = *test.clone().borrow() {
                             return eval(dd.borrow().car()?, env.clone());
@@ -157,12 +150,12 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                     Err(RuntimeError::new("cond not exhausted"))
                 },
                 Datum::SpecialForm(SpecialForm::If) => {
-                    if let Datum::Boolean(true) = *eval(d.borrow().car()?, env.clone())?.borrow() {
+                    if eval(d.borrow().car()?, env.clone())?.borrow().is_true() {
                         eval(d.borrow().cdr()?.borrow().car()?, env.clone())
                     } else if let Ok(ref false_term) = d.borrow().cdr()?.borrow().cdr()?.borrow().car() {
                         eval(false_term.clone(), env.clone())
                     } else {
-                        Ok(Datum::default().wrap())
+                        Ok(SymbolTable::unspecified())
                     }
                 },
                 Datum::SpecialForm(SpecialForm::Quote) => {
@@ -176,7 +169,7 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                     let mut formals = d.borrow().car()?;
                     while let Datum::Pair(ref ad, ref dd) = *formals.clone().borrow().car()?.borrow() {
                         let id = if let Datum::Symbol(ref id) = *ad.clone().borrow() { id.clone() } else { return Err(RuntimeError::new("formal name not specified in let")) };
-                        let val = if let Datum::Nil = *dd.borrow() { Datum::default().wrap() } else { eval(dd.borrow().car()?, env.clone())? };
+                        let val = if let Datum::Nil = *dd.borrow() { SymbolTable::unspecified() } else { eval(dd.borrow().car()?, env.clone())? };
                         env.borrow_mut().put(id, val);
                         formals = formals.clone().borrow().cdr()?;
                         if let Datum::Nil = *formals.borrow() { break; }
@@ -188,7 +181,7 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                     let mut formals = d.borrow().car()?;
                     while let Datum::Pair(ref ad, ref dd) = *formals.clone().borrow().car()?.borrow() {
                         let id = if let Datum::Symbol(ref id) = *ad.clone().borrow() { id.clone() } else { return Err(RuntimeError::new("formal name not specified in let")) };
-                        let val = if let Datum::Nil = *dd.borrow() { Datum::default().wrap() } else { eval(dd.borrow().car()?, env.clone())? };
+                        let val = if let Datum::Nil = *dd.borrow() { SymbolTable::unspecified() } else { eval(dd.borrow().car()?, env.clone())? };
                         let_env.borrow_mut().put(id, val);
                         formals = formals.clone().borrow().cdr()?;
                         if let Datum::Nil = *formals.borrow() { break; }
@@ -228,71 +221,129 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
 
 pub fn eval_list(term: Value, env: Env) -> Result<Value, RuntimeError> {
     // println!("Eval list: {:?}", term);
-    match *term.borrow() {
-        Datum::Symbol(ref s) => {
-            env.borrow().find(&s)
-        },
-        Datum::Pair(ref a, ref d) => {
-            Ok(Datum::Pair(eval(a.clone(), env.clone())?, eval_list(d.clone(), env.clone())?).wrap())
-        },
-        _ => Ok(term.clone())
+    // match *term.borrow() {
+    //     Datum::Symbol(ref id) => {
+    //         env.borrow().find(id)
+    //     },
+    //     Datum::Pair(ref a, ref d) => {
+    //         Ok(Datum::Pair(eval(a.clone(), env.clone())?, eval_list(d.clone(), env.clone())?).wrap())
+    //     },
+    //     _ => Ok(term.clone())
+    // }
+    let mut ret = SymbolTable::nil();
+    let mut last = SymbolTable::nil();
+    let mut list = List::from(term);
+    while let Some(next) = list.next() {
+        if let ListItem::Item(x) = next {
+            if ret.clone().borrow().is_nil() {
+                let v = eval(x, env.clone())?;
+                ret = Datum::Pair(v, SymbolTable::nil()).wrap();
+                last = ret.clone();
+            } else {
+                let v = eval(x, env.clone())?;
+                let d = Datum::Pair(v, SymbolTable::nil()).wrap();
+                last.borrow_mut().set_cdr(d.clone());
+                last = d;
+            }
+        } else if let ListItem::Ellipsis(x) = next {
+            let v = eval(x, env.clone())?;
+            last.borrow_mut().set_cdr(v);
+        }
     }
+    Ok(ret)
 }
 
 pub fn eval_begin(term: Value, env: Env) -> Result<Value, RuntimeError> {
     // println!("Eval begin: {:?}", term);
-    match *term.borrow() {
-        Datum::Symbol(ref id) => {
-            env.borrow().find(id)
-        },
-        Datum::Pair(ref a, ref d) => {
-            let a = eval(a.clone(), env.clone())?;
-            if let Datum::Nil = *d.clone().borrow() { Ok(a) } else { eval_begin(d.clone(), env.clone()) }
-        },
-        _ => Ok(term.clone())
+    // match *term.borrow() {
+    //     Datum::Symbol(ref id) => {
+    //         env.borrow().find(id)
+    //     },
+    //     Datum::Pair(ref a, ref d) => {
+    //         let a = eval(a.clone(), env.clone())?;
+    //         if let Datum::Nil = *d.clone().borrow() { Ok(a) } else { eval_begin(d.clone(), env.clone()) }
+    //     },
+    //     _ => Ok(term.clone())
+    // }
+    let mut ret = SymbolTable::unspecified();
+    let mut list = List::from(term);
+    while let Some(next) = list.next() {
+        if let ListItem::Item(x) = next {
+            ret = eval(x, env.clone())?;
+        } else {
+            Err(RuntimeError::new("Unexpected form in begin"))?
+        }
     }
+    Ok(ret)
 }
 
 pub fn eval_and(term: Value, env: Env) -> Result<Value, RuntimeError> {
-    match *term.borrow() {
-        Datum::Symbol(ref s) => {
-            if let Datum::Boolean(ref b) = *env.borrow().find(&s)?.borrow() {
-                Ok(Datum::Boolean(*b).wrap())
-            } else { Err(RuntimeError::new("Non-bool expr in and")) }
-        },
-        Datum::Pair(ref a, ref d) => {
-            if let Datum::Boolean(true) = *eval(a.clone(), env.clone())?.borrow() {
-                eval_and(d.clone(), env.clone())
-            } else {
-                Ok(Datum::Boolean(false).wrap())
+    let mut ret = SymbolTable::bool(true);
+    let mut list = List::from(term);
+    while let Some(next) = list.next() {
+        if let ListItem::Item(x) = next {
+            ret = eval(x, env.clone())?;            
+            if ret.borrow().is_false() {
+                break;
             }
-        },
-        Datum::Nil => {
-            Ok(Datum::Boolean(true).wrap())
-        },
-        _ => Err(RuntimeError::new("Non-bool expr in and"))
+        } else {
+            Err(RuntimeError::new("Unexpected form in and"))?
+        }
     }
+    Ok(ret)
+    // match *term.borrow() {
+    //     Datum::Symbol(ref id) => {
+    //         if let Datum::Boolean(ref b) = *env.borrow().find(id)?.borrow() {
+    //             Ok(SymbolTable::bool(*b))
+    //         } else { Err(RuntimeError::new("Non-bool expr in and")) }
+    //     },
+    //     Datum::Pair(ref a, ref d) => {
+    //         if eval(a.clone(), env.clone())?.borrow().is_true() {
+    //             eval_and(d.clone(), env.clone())
+    //         } else {
+    //             Ok(SymbolTable::bool(false))
+    //         }
+    //     },
+    //     Datum::Nil => {
+    //         Ok(SymbolTable::bool(true))
+    //     },
+    //     _ => Err(RuntimeError::new("Non-bool expr in and"))
+    // }
 }
 
 pub fn eval_or(term: Value, env: Env) -> Result<Value, RuntimeError> {
-    match *term.borrow() {
-        Datum::Symbol(ref s) => {
-            if let Datum::Boolean(ref b) = *env.borrow().find(&s)?.borrow() {
-                Ok(Datum::Boolean(*b).wrap())
-            } else { Err(RuntimeError::new("Non-bool expr in and")) }
-        },
-        Datum::Pair(ref a, ref d) => {
-            if let Datum::Boolean(true) = *eval(a.clone(), env.clone())?.borrow() {
-                Ok(Datum::Boolean(true).wrap())
-            } else {
-                eval_and(d.clone(), env.clone())                
+    let mut ret = SymbolTable::bool(false);
+    let mut list = List::from(term);
+    while let Some(next) = list.next() {
+        if let ListItem::Item(x) = next {
+            ret = eval(x.clone(), env.clone())?;
+            if ret.borrow().is_true() {
+                break;
             }
-        },
-        Datum::Nil => {
-            Ok(Datum::Boolean(false).wrap())
-        },
-        _ => Err(RuntimeError::new("Non-bool expr in or"))
+        } else {
+            Err(RuntimeError::new("Unexpected form in or"))?
+        }
     }
+    Ok(ret)
+
+    // match *term.borrow() {
+    //     Datum::Symbol(ref id) => {
+    //         if let Datum::Boolean(ref b) = *env.borrow().find(id)?.borrow() {
+    //             Ok(SymbolTable::bool(*b))
+    //         } else { Err(RuntimeError::new("Non-bool expr in and")) }
+    //     },
+    //     Datum::Pair(ref a, ref d) => {
+    //         if eval(a.clone(), env.clone())?.borrow().is_true() {
+    //             Ok(SymbolTable::bool(true))
+    //         } else {
+    //             eval_or(d.clone(), env.clone())                
+    //         }
+    //     },
+    //     Datum::Nil => {
+    //         Ok(SymbolTable::bool(false))
+    //     },
+    //     _ => Err(RuntimeError::new("Non-bool expr in or"))
+    // }
 }
 
 pub fn eval_pattern_match(pattern: Value, params: Value, env: Env) -> Result<(), RuntimeError> {

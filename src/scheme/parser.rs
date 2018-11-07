@@ -1,6 +1,6 @@
 use crate::lexer::Token;
 use super::beam::*;
-use super::symbol::SymbolTable;
+use super::symbol::*;
 use crate::utils::tree;
 use crate::utils::tree::{TreeNode, NodeZipper};
 
@@ -9,7 +9,7 @@ use std::cell::RefCell;
 
 pub type Node = tree::Node<Token>;
 
-pub fn parse(src: &[Token], symtable: &mut SymbolTable) -> Result<Value, ()> {
+pub fn parse(src: &[Token]) -> Result<Value, ()> {
     let mut tree = Node::new(Token {
         type_: "LGroup".to_string(),
         value_: "(".to_string(),
@@ -47,15 +47,16 @@ pub fn parse(src: &[Token], symtable: &mut SymbolTable) -> Result<Value, ()> {
         }
     }
     let node = tree.finish();
-    let dumplist = parse_datum(node, symtable);
-    match Rc::try_unwrap(dumplist).unwrap().into_inner() {
+    let dumplist = parse_datum(node);
+    // println!("LIST: {:?}", dumplist);
+    match *dumplist.clone().borrow() {
         Datum::Pair(ref car, ref cdr) => Ok(car.clone()),
-        Datum::Nil => Ok(Datum::Nil.wrap()),
+        Datum::Nil => Ok(SymbolTable::nil()),
         _ => Err(())
     }
 }
 
-pub fn parse_datum(mut src: Node, symtable: &mut SymbolTable) -> Value {
+pub fn parse_datum(mut src: Node) -> Value {
     match src.value.type_.as_str() {
         // "Eval" => Datum::SpecialForm(SpecialForm::Eval),
         // "Apply" => Datum::SpecialForm(SpecialForm::Apply),
@@ -72,26 +73,26 @@ pub fn parse_datum(mut src: Node, symtable: &mut SymbolTable) -> Value {
         // "Cond" => Datum::SpecialForm(SpecialForm::Cond),
         // "If" => Datum::SpecialForm(SpecialForm::If),
         // "Quote" => Datum::SpecialForm(SpecialForm::Quote),
-        "Number" => Datum::Number(src.value.value_.parse().expect(&format!("Error parsing {:?}", src))).wrap(),
-        "String" => Datum::String(src.value.value_).wrap(),
-        "Boolean" => Datum::Boolean(src.value.value_.as_str() == "#t").wrap(),
-        "Character" => Datum::Character(match src.value.value_.as_str() {
+        "Number" => SymbolTable::number(src.value.value_.parse().expect(&format!("Error parsing {:?}", src))),
+        "String" => SymbolTable::string(src.value.value_),
+        "Boolean" => SymbolTable::bool(src.value.value_.as_str() == "#t"),
+        "Character" => SymbolTable::character(match src.value.value_.as_str() {
             "#\\newline" => '\n',
             "#\\space" => ' ',
             _ => src.value.value_.chars().skip(2).next().expect("Error when parsing char")
-        }).wrap(),
-        "LGroup" => if src.len() == 0 { Datum::Nil.wrap() }
+        }),
+        "LGroup" => if src.len() == 0 { SymbolTable::nil() }
         else if src.len() == 2 && src.childs[1].value.type_.as_str() == "Dot" {
-            Datum::Pair(parse_datum(src.childs.remove(0), symtable), parse_datum(src.childs.remove(0), symtable)).wrap()
+            Datum::Pair(parse_datum(src.childs.remove(0)), parse_datum(src.childs.remove(0))).wrap()
         } else {
-            Datum::Pair(parse_datum(src.childs.remove(0), symtable), parse_datum(src, symtable)).wrap()
+            Datum::Pair(parse_datum(src.childs.remove(0)), parse_datum(src)).wrap()
         },
-        "Dot" => parse_datum(src.childs.remove(0), symtable),
+        "Dot" => parse_datum(src.childs.remove(0)),
         // "VGroup" => Datum::Vector(src.childs.into_iter().map(|x| parse_datum(x)).collect()),
-        "Symbolize" => Datum::Abbreviation(AbbrevPrefix::Quote, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "Quote")), symtable)).wrap(),
-        "Template" => Datum::Abbreviation(AbbrevPrefix::Quasiquote, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "Template")), symtable)).wrap(),
-        "Comma" => Datum::Abbreviation(AbbrevPrefix::Unquote, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "Comma")), symtable)).wrap(),
-        "Comma_Splicing" => Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "CommaS")), symtable)).wrap(),
-        _ => symtable.get(src.value.value_)
+        "Symbolize" => Datum::Abbreviation(AbbrevPrefix::Quote, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "Quote")))).wrap(),
+        "Template" => Datum::Abbreviation(AbbrevPrefix::Quasiquote, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "Template")))).wrap(),
+        "Comma" => Datum::Abbreviation(AbbrevPrefix::Unquote, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "Comma")))).wrap(),
+        "Comma_Splicing" => Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, parse_datum(src.childs.into_iter().next().expect(&format!("Error parsing {:?}", "CommaS")))).wrap(),
+        _ => SymbolTable::symbol(src.value.value_)
     }
 }

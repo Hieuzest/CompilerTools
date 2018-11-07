@@ -1,4 +1,5 @@
 use super::env::*;
+use super::symbol::*;
 use std::iter;
 use std::str::FromStr;
 use std::rc::Rc;
@@ -6,7 +7,6 @@ use std::cell::RefCell;
 use std::fmt;
 
 pub type Value = Rc<RefCell<Datum>>;
-
 
 #[derive(Debug)]
 pub struct RuntimeError {
@@ -19,8 +19,6 @@ impl RuntimeError {
             msg: s.into()
         }
     }
-
-
 }
 
 
@@ -113,16 +111,8 @@ impl fmt::Display for Datum {
     }
 }
 
-impl Default for Datum {
-    fn default() -> Self {
-        Datum::Unspecified
-    }
-}
 
 impl Datum {
-    pub fn new() -> Self {
-        Datum::Nil
-    }
 
     pub fn wrap(self) -> Value {
         Rc::new(RefCell::new(self))
@@ -140,11 +130,37 @@ impl Datum {
         if let Datum::Pair(_, _) = self { true } else { false }
     }
 
+    pub fn is_false(&self) -> bool {
+        if let Datum::Boolean(false) = self { true } else { false }
+    }
+
+    pub fn is_true(&self) -> bool {
+        !self.is_false()
+    }
+
     pub fn car(&self) -> Result<Value, RuntimeError> {
         if let Datum::Pair(a, d) = self {
             Ok(a.clone())
         } else {
             Err(RuntimeError::new(format!("ice: car on non-list : {:?}", self)))
+        }
+    }
+
+    pub fn set_car(&mut self, rhs: Value) -> Result<Value, RuntimeError> {
+        if let Datum::Pair(ref mut a, _) = self {
+            *a = rhs.clone();
+            Ok(SymbolTable::unspecified())
+        } else {
+            Err(RuntimeError::new("ice: set_car on non-list"))
+        }
+    }
+
+    pub fn set_cdr(&mut self, rhs: Value) -> Result<Value, RuntimeError> {
+        if let Datum::Pair(_, ref mut d) = self {
+            *d = rhs.clone();
+            Ok(SymbolTable::unspecified())
+        } else {
+            Err(RuntimeError::new("ice: set_car on non-list"))
         }
     }
 
@@ -170,14 +186,6 @@ impl List {
     fn is_nil(&self) -> bool {
         self.item.as_ref().unwrap().borrow().is_nil()
     }
-
-    // pub fn car(&self) -> Result<Value, RuntimeError> {
-    //     self.item.borrow().car()
-    // }
-
-    // pub fn cdr(&self) -> Result<Value, RuntimeError> {
-    //     self.item.borrow().cdr()
-    // }
 }
 
 impl From<Value> for List {
@@ -239,11 +247,11 @@ impl fmt::Debug for LambdaExpression {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct SyntaxRule {
-    pub formals: Vec<String>,
-    pub expr: Box<Datum>
-}
+// #[derive(Debug, Clone)]
+// pub struct SyntaxRule {
+//     pub formals: Vec<String>,
+//     pub expr: Box<Datum>
+// }
 
 #[derive(Debug, Copy, Clone)]
 pub enum SpecialForm {

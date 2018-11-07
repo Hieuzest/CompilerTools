@@ -1,4 +1,5 @@
 use super::beam::*;
+use super::symbol::*;
 use super::core;
 use crate::utils::*;
 
@@ -80,7 +81,7 @@ impl Environment {
 
             "display" => |v| {
                 print!("{:}", v.borrow().car()?.borrow());
-                Ok(Datum::default().wrap())
+                Ok(SymbolTable::unspecified())
             }
         ];
         m.extend(sforms![
