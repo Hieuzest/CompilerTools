@@ -78,6 +78,10 @@ impl Environment {
             "list" => core::list,
             "null?" => core::is_null,
             "eq?" => core::is_eq,
+            "number?" => core::is_number,
+            "string?" => core::is_string,
+            "symbol?" => core::is_symbol,
+            "pair?" => core::is_pair,
 
             "display" => |v| {
                 print!("{:}", v.borrow().car()?.borrow());

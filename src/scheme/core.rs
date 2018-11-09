@@ -105,6 +105,22 @@ pub fn is_null(operands: Value) -> Result<Value, RuntimeError> {
     Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_nil()))
 }
 
+pub fn is_number(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_number()))
+}
+
+pub fn is_string(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_string()))
+}
+
+pub fn is_symbol(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_symbol()))
+}
+
+pub fn is_pair(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_pair()))
+}
+
 pub fn is_eq(operands: Value) -> Result<Value, RuntimeError> {
     let a = operands.borrow().car()?;
     let d = operands.borrow().cadr()?;

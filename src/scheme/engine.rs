@@ -17,27 +17,8 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
         },
         // Datum::SpecialForm(sf) => Ok(Datum::SpecialForm(*sf)),
         Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => Ok(val.clone()),
-        // Datum::Abbreviation(AbbrevPrefix::Template, d) => {
-        //     if let Datum::List(l) = d.as_ref() {
-        //         Ok(Datum::List(l.iter().flat_map(|x| {match x {
-        //             Datum::Abbreviation(AbbrevPrefix::Comma, dd) => {
-        //                 vec![eval(dd, env).expect(&format!("Error occured when eval {:?}", dd))]
-        //             },
-        //             Datum::Abbreviation(AbbrevPrefix::CommaSplicing, dd) => {
-        //                 if let Datum::List(l) = eval(dd, env).expect(&format!("Error occured when eval {:?}", dd)) {
-        //                     l.iter().map(|xx| eval(xx, env).expect(&format!("Error occured when eval {:?}", xx))).collect::<Vec<Datum>>()
-        //                 } else {
-        //                     panic!("Comma splicing on non-list")
-        //                 }
-        //             },
-        //             Datum::Abbreviation(AbbrevPrefix::Template, _) => vec![eval(&x, env).expect(&format!("Error occured when eval {:?}", x))],
-        //             _ => vec![x.clone()]
-        //         }}).collect()))
-        //     } else {
-        //         Ok(*d.clone())
-        //     }
-        // },
-        // Datum::Abbreviation(AbbrevPrefix::Comma, _) | Datum::Abbreviation(AbbrevPrefix::CommaSplicing, _) => Err(RuntimeError::new(format!("Unquote : {:?}", term))) ,
+        Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => eval_quasiquote(val.clone(), env.clone()),
+        Datum::Abbreviation(AbbrevPrefix::Unquote, _) | Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, _) => Err(RuntimeError::new("unexpected unquote outside quasiquote")),
         Datum::Pair(ref a, ref d) => {
             let operator = eval(a.clone(), env.clone())?;
             match *operator.clone().borrow() {
@@ -118,7 +99,7 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                         Ok(SymbolTable::unspecified())
                     } else {
                         list.replace(pair);
-                        Err(RuntimeError::new("variable not pair in set-cdr!"))
+                        Err(RuntimeError::new(format!("variable not pair in set-cdr! : {:?}", list.borrow())))
                     }
                 },         
                 Datum::SpecialForm(SpecialForm::Lambda) => {
@@ -139,9 +120,9 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
                     while let Datum::Pair(ref ad, ref dd) = *formals.clone().borrow().car()?.borrow() {
                         let test = eval(ad.clone(), env.clone())?;
                         if test.borrow().is_true() {
-                            return eval(dd.borrow().car()?, env.clone());
+                            return eval_begin(dd.clone(), env.clone());
                         } else if let Datum::SpecialForm(SpecialForm::Else) = *test.clone().borrow() {
-                            return eval(dd.borrow().car()?, env.clone());
+                            return eval_begin(dd.clone(), env.clone());
                         } else {
                             formals = formals.clone().borrow().cdr()?;
                             if let Datum::Nil = *formals.borrow() { break; }
@@ -220,51 +201,19 @@ pub fn eval_inner(term: Value, env: Env) -> Result<Value, RuntimeError> {
 }
 
 pub fn eval_list(term: Value, env: Env) -> Result<Value, RuntimeError> {
-    // println!("Eval list: {:?}", term);
-    // match *term.borrow() {
-    //     Datum::Symbol(ref id) => {
-    //         env.borrow().find(id)
-    //     },
-    //     Datum::Pair(ref a, ref d) => {
-    //         Ok(Datum::Pair(eval(a.clone(), env.clone())?, eval_list(d.clone(), env.clone())?).wrap())
-    //     },
-    //     _ => Ok(term.clone())
-    // }
-    let mut ret = SymbolTable::nil();
-    let mut last = SymbolTable::nil();
+    let mut ret = List::new();
     let mut list = List::from(term);
     while let Some(next) = list.next() {
         if let ListItem::Item(x) = next {
-            if ret.clone().borrow().is_nil() {
-                let v = eval(x, env.clone())?;
-                ret = Datum::Pair(v, SymbolTable::nil()).wrap();
-                last = ret.clone();
-            } else {
-                let v = eval(x, env.clone())?;
-                let d = Datum::Pair(v, SymbolTable::nil()).wrap();
-                last.borrow_mut().set_cdr(d.clone());
-                last = d;
-            }
+            ret = ret.chain(iter::once(ListItem::Item(eval(x, env.clone())?))).collect();
         } else if let ListItem::Ellipsis(x) = next {
-            let v = eval(x, env.clone())?;
-            last.borrow_mut().set_cdr(v);
+            ret = ret.chain(iter::once(ListItem::Ellipsis(eval(x, env.clone())?))).collect();
         }
     }
-    Ok(ret)
+    Ok(ret.into())
 }
 
 pub fn eval_begin(term: Value, env: Env) -> Result<Value, RuntimeError> {
-    // println!("Eval begin: {:?}", term);
-    // match *term.borrow() {
-    //     Datum::Symbol(ref id) => {
-    //         env.borrow().find(id)
-    //     },
-    //     Datum::Pair(ref a, ref d) => {
-    //         let a = eval(a.clone(), env.clone())?;
-    //         if let Datum::Nil = *d.clone().borrow() { Ok(a) } else { eval_begin(d.clone(), env.clone()) }
-    //     },
-    //     _ => Ok(term.clone())
-    // }
     let mut ret = SymbolTable::unspecified();
     let mut list = List::from(term);
     while let Some(next) = list.next() {
@@ -291,24 +240,6 @@ pub fn eval_and(term: Value, env: Env) -> Result<Value, RuntimeError> {
         }
     }
     Ok(ret)
-    // match *term.borrow() {
-    //     Datum::Symbol(ref id) => {
-    //         if let Datum::Boolean(ref b) = *env.borrow().find(id)?.borrow() {
-    //             Ok(SymbolTable::bool(*b))
-    //         } else { Err(RuntimeError::new("Non-bool expr in and")) }
-    //     },
-    //     Datum::Pair(ref a, ref d) => {
-    //         if eval(a.clone(), env.clone())?.borrow().is_true() {
-    //             eval_and(d.clone(), env.clone())
-    //         } else {
-    //             Ok(SymbolTable::bool(false))
-    //         }
-    //     },
-    //     Datum::Nil => {
-    //         Ok(SymbolTable::bool(true))
-    //     },
-    //     _ => Err(RuntimeError::new("Non-bool expr in and"))
-    // }
 }
 
 pub fn eval_or(term: Value, env: Env) -> Result<Value, RuntimeError> {
@@ -325,25 +256,6 @@ pub fn eval_or(term: Value, env: Env) -> Result<Value, RuntimeError> {
         }
     }
     Ok(ret)
-
-    // match *term.borrow() {
-    //     Datum::Symbol(ref id) => {
-    //         if let Datum::Boolean(ref b) = *env.borrow().find(id)?.borrow() {
-    //             Ok(SymbolTable::bool(*b))
-    //         } else { Err(RuntimeError::new("Non-bool expr in and")) }
-    //     },
-    //     Datum::Pair(ref a, ref d) => {
-    //         if eval(a.clone(), env.clone())?.borrow().is_true() {
-    //             Ok(SymbolTable::bool(true))
-    //         } else {
-    //             eval_or(d.clone(), env.clone())                
-    //         }
-    //     },
-    //     Datum::Nil => {
-    //         Ok(SymbolTable::bool(false))
-    //     },
-    //     _ => Err(RuntimeError::new("Non-bool expr in or"))
-    // }
 }
 
 pub fn eval_pattern_match(pattern: Value, params: Value, env: Env) -> Result<(), RuntimeError> {
@@ -366,4 +278,62 @@ pub fn eval_pattern_match(pattern: Value, params: Value, env: Env) -> Result<(),
             Err(RuntimeError::new("Unexpected pattern matching"))
         }
     }
+}
+
+pub fn eval_quasiquote(term: Value, env: Env) -> Result<Value, RuntimeError> {
+    let mut ret = List::new();
+    let mut list = List::from(term);
+    while let Some(next) = list.next() {
+        if let ListItem::Item(x) = next {
+            match *x.borrow() {
+                Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => {
+                    ret = ret.chain(iter::once(ListItem::Item(
+                        eval(val.clone(), env.clone())?
+                    ))).collect();
+                },
+                Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => {
+                    ret = ret.chain(List::from(
+                        eval(val.clone(), env.clone())?
+                    )).collect();
+                },
+                _ => {
+                    // if let Datum::Pair(ref a, ref d) = *x.borrow() {
+                    //     if let Datum::Symbol(ref id) = *a.borrow() {
+                    //         if id == "unquote" {
+                    //             ret = ret.chain(iter::once(ListItem::Item(
+                    //                 eval(d.clone(), env.clone())?
+                    //             ))).collect();
+                    //             continue;
+                    //         } else if id == "unquote-splicing" {
+                    //             ret = ret.chain(List::from(
+                    //                 eval(d.clone(), env.clone())?
+                    //             )).collect();
+                    //             continue;
+                    //         }
+                    //     }
+                    // }
+                    ret = ret.chain(iter::once(ListItem::Item(
+                        x.clone()
+                    ))).collect();
+                }
+            }
+        } else if let ListItem::Ellipsis(x) = next {
+            match *x.borrow() {
+                Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => {
+                    ret = ret.chain(iter::once(ListItem::Ellipsis(
+                        eval(val.clone(), env.clone())?
+                    ))).collect();
+                },
+                Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => {
+                    Err(RuntimeError::new(",@ in unexpected context"))?
+                },
+                _ => {
+                    ret = ret.chain(iter::once(ListItem::Ellipsis(
+                        x.clone()
+                    ))).collect();
+                }
+            }
+        }
+    }
+    Ok(ret.into())
 }

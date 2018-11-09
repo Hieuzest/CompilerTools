@@ -6,9 +6,7 @@ use coolc::lexer;
 
 use std::io::*;
 
-fn repl(rules: &Vec<lexer::RegularRule>) {
-    let env = self::scheme::env::Environment::new();
-
+fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env) {
     let code = vec![
         "(define (exit))",
         "(define (cmds cmd arg . l) (if (null? l) (cmd arg) (begin (cmd arg) (cmds cmd . l))))",
@@ -23,12 +21,13 @@ fn repl(rules: &Vec<lexer::RegularRule>) {
         "(begin (define oldop *) (define (op . l) (ops oldop 1 . l)) (set! * op))",
         "(begin (define oldop /) (define (op x . l) (ops oldop x . l)) (set! / op))",
     ];
+
+
     for input in code {
         let tokens: Vec<Token> = lexer::tokenize(input, &rules).unwrap();
         let program = self::scheme::parser::parse(&tokens).unwrap();
-        self::scheme::engine::eval(program, env.clone()).expect("inner install fail");
+        self::scheme::engine::eval_begin(program, env.clone()).expect("inner install fail");
     }
-
 
     loop {
         let mut input = String::new();
@@ -54,7 +53,7 @@ fn repl(rules: &Vec<lexer::RegularRule>) {
 
         // println!("\t{:?}", program.borrow());
 
-        let answer = self::scheme::engine::eval(program, env.clone());
+        let answer = self::scheme::engine::eval_begin(program, env.clone());
 
         match answer {
             Ok(value) => println!("=> {:?}", value.borrow()),
@@ -102,21 +101,21 @@ fn main() {
         VERBOSE = verbose;
     }
 
-    if repl {
-        let rules: Vec<lexer::RegularRule> = serde_yaml::from_str(&read_file(lexer_input_model.as_str()).expect(&format!("Cannot open file: {:} as LEXER_MODEL", lexer_input_model))).expect("Deserialize error");
-        self::repl(&rules);
-    } else {
-        let tokens: Vec<Token> = if lexer_input_tokens.is_empty() {
-            let rules: Vec<lexer::RegularRule> = serde_yaml::from_str(&read_file(lexer_input_model.as_str()).expect(&format!("Cannot open file: {:} as LEXER_MODEL", lexer_input_model))).expect("Deserialize error");
-            lexer::tokenize(read_file(input_file.as_str()).expect("Cannot open source file").as_str(), &rules).unwrap()
-        } else {
-            serde_yaml::from_str(&read_file(lexer_input_tokens.as_str()).expect(&format!("Cannot open file: {:} as PARSER_TOKENS", lexer_input_tokens))).expect("Deserialize error")
-        };
+    let env = self::scheme::env::Environment::new();
+
+    let rules: Vec<lexer::RegularRule> = serde_yaml::from_str(&read_file(lexer_input_model.as_str()).expect(&format!("Cannot open file: {:} as LEXER_MODEL", lexer_input_model))).expect("Deserialize error");
+
+
+    if !input_file.is_empty() {
+        let tokens: Vec<Token> = lexer::tokenize(read_file(input_file.as_str()).expect("Cannot open source file").as_str(), &rules).unwrap();
 
         let program = self::scheme::parser::parse(&tokens).unwrap();
         if debug { println!("{:?}", program); }
 
-        let ret = self::scheme::engine::eval(program, self::scheme::env::Environment::new());
-        println!("Answer: {:?}", ret.map(|x| x.borrow().clone()));
+        let ret = self::scheme::engine::eval_begin(program, env.clone());
+        println!("\nAnswer: {:?}", ret.map(|x| x.borrow().clone()));
+    }
+    if repl {
+        self::repl(&rules, env.clone());
     }
 }

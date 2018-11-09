@@ -47,13 +47,13 @@ pub fn parse(src: &[Token]) -> Result<Value, ()> {
         }
     }
     let node = tree.finish();
-    let dumplist = parse_datum(node);
+    Ok(parse_datum(node))
     // println!("LIST: {:?}", dumplist);
-    match *dumplist.clone().borrow() {
-        Datum::Pair(ref car, ref cdr) => Ok(car.clone()),
-        Datum::Nil => Ok(SymbolTable::nil()),
-        _ => Err(())
-    }
+    // match *dumplist.clone().borrow() {
+    //     Datum::Pair(ref car, ref cdr) => Ok(car.clone()),
+    //     Datum::Nil => Ok(SymbolTable::nil()),
+    //     _ => Err(())
+    // }
 }
 
 pub fn parse_datum(mut src: Node) -> Value {
@@ -74,7 +74,7 @@ pub fn parse_datum(mut src: Node) -> Value {
         // "If" => Datum::SpecialForm(SpecialForm::If),
         // "Quote" => Datum::SpecialForm(SpecialForm::Quote),
         "Number" => SymbolTable::number(src.value.value_.parse().expect(&format!("Error parsing {:?}", src))),
-        "String" => SymbolTable::string(src.value.value_),
+        "String" => SymbolTable::string(src.value.value_[1..src.value.value_.len()-1].to_string()),
         "Boolean" => SymbolTable::bool(src.value.value_.as_str() == "#t"),
         "Character" => SymbolTable::character(match src.value.value_.as_str() {
             "#\\newline" => '\n',

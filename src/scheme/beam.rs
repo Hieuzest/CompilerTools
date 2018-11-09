@@ -52,7 +52,8 @@ pub enum Datum {
     SpecialForm(SpecialForm),
     Builtin(Box<fn(Value) -> Result<Value, RuntimeError>>),
     Lambda(LambdaExpression),
-    // Syntax(SyntaxRule),
+    TransformerSpec(SyntaxRule),
+    SyntaxRules(Value),
 }
 
 impl fmt::Debug for Datum {
@@ -80,6 +81,7 @@ impl fmt::Debug for Datum {
             Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:?}", val.borrow()),
             Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:?}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
+            _ => write!(f, "<Unknown>")
         }
     }
 }
@@ -91,7 +93,7 @@ impl fmt::Display for Datum {
             Datum::Boolean(false) => write!(f, "#f"),
             Datum::Number(ref n) => write!(f, "{:}", n),
             Datum::Character(ref c) => write!(f, "{:}", c),
-            Datum::String(ref s) => write!(f, "\"{:}\"", s),
+            Datum::String(ref s) => write!(f, "{:}", s),
             Datum::Symbol(ref id) => write!(f, "{:}", id),
             Datum::Nil => write!(f, "()"),
             Datum::Unspecified => write!(f, "<Unspecified>"),
@@ -107,6 +109,7 @@ impl fmt::Display for Datum {
             Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:}", val.borrow()),
             Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
+            _ => write!(f, "<Unknown>")
         }
     }
 }
@@ -136,6 +139,18 @@ impl Datum {
 
     pub fn is_true(&self) -> bool {
         !self.is_false()
+    }
+
+    pub fn is_string(&self) -> bool {
+        if let Datum::String(_) = self { true } else { false }
+    }
+
+    pub fn is_number(&self) -> bool {
+        if let Datum::Number(_) = self { true } else { false }
+    }
+
+    pub fn is_symbol(&self) -> bool {
+        if let Datum::Symbol(_) = self { true } else { false }
     }
 
     pub fn car(&self) -> Result<Value, RuntimeError> {
@@ -177,16 +192,71 @@ impl Datum {
     }
 }
 
+
 #[derive(Debug, Clone)]
 pub struct List {
     item: Option<Value>
 }
 
 impl List {
+    pub fn new() -> Self {
+        List {
+            item: None
+        }
+    }
+
     fn is_nil(&self) -> bool {
         self.item.as_ref().unwrap().borrow().is_nil()
     }
 }
+
+impl Into<Value> for List {
+    fn into(self) -> Value {
+        if let Some(val) = self.item {
+            val
+        } else {
+            SymbolTable::nil()
+        }
+    }
+}
+
+impl iter::FromIterator<ListItem> for List {
+    /* If a list contains multiply ellipsis,
+     * only the last will count, others will be skipped
+     */
+    fn from_iter<I: IntoIterator<Item = ListItem>>(list: I) -> List {
+        let mut ret = SymbolTable::nil();
+        let mut last = SymbolTable::nil();
+        let mut list = list.into_iter();
+        while let Some(next) = list.next() {
+            if let ListItem::Item(x) = next {
+                if ret.borrow().is_nil() {
+                    ret = Datum::Pair(x, SymbolTable::nil()).wrap();
+                    last = ret.clone();
+                } else {
+                    let d = Datum::Pair(x, SymbolTable::nil()).wrap();
+                    last.borrow_mut().set_cdr(d.clone());
+                    last = d;
+                }
+            } else if let ListItem::Ellipsis(x) = next {
+                if ret.borrow().is_nil() {
+                    ret = x;
+                } else {
+                    last.borrow_mut().set_cdr(x);
+                }
+            }
+        }
+        List::from(ret)
+    }
+}
+
+// impl Extend<ListItem> for List {
+//     fn extend<I: IntoIterator<Item = ListItem>>(&mut self, list: I) {
+//         let mut l = self.collect::<Vec<ListItem>>();
+//         l.extend(list.into_iter().collect::<Vec<ListItem>>());
+//         *self = l.into_iter().collect();
+//     }
+// }
 
 impl From<Value> for List {
     fn from(value: Value) -> List {
@@ -206,6 +276,22 @@ impl From<&Value> for List {
 
 pub enum ListItem {
     Item(Value), Ellipsis(Value)
+}
+
+impl ListItem {
+    // fn map<F: FnOnce(Value) -> Value>(self, f: F) -> Self {
+    //     match self {
+    //         ListItem::Item(val) => ListItem::Item(f(val)),
+    //         ListItem::Ellipsis(val) => ListItem::Ellipsis(f(val)),
+    //     }
+    // }
+
+    // fn try_map<F: FnOnce(Value) -> Result<Value, RuntimeError>>(self, f: F) -> Result<ListItem, RuntimeError> {
+    //     match self {
+    //         ListItem::Item(val) => Ok(ListItem::Item(f(val)?)),
+    //         ListItem::Ellipsis(val) => Ok(ListItem::Ellipsis(f(val)?)),
+    //     }
+    // }
 }
 
 impl Iterator for List {
@@ -247,11 +333,11 @@ impl fmt::Debug for LambdaExpression {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct SyntaxRule {
-//     pub formals: Vec<String>,
-//     pub expr: Box<Datum>
-// }
+#[derive(Debug, Clone)]
+pub struct SyntaxRule {
+    pub literal: Value,
+    pub pattern: Value
+}
 
 #[derive(Debug, Copy, Clone)]
 pub enum SpecialForm {
