@@ -6,7 +6,8 @@ use coolc::lexer;
 
 use std::io::*;
 
-fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env) {
+fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool) {
+    if !test {
     let code = vec![
         "(define (exit))",
         "(define (cmds cmd arg . l) (if (null? l) (cmd arg) (begin (cmd arg) (cmds cmd . l))))",
@@ -27,6 +28,7 @@ fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env) {
         let tokens: Vec<Token> = lexer::tokenize(input, &rules).unwrap();
         let program = self::scheme::parser::parse(&tokens).unwrap();
         self::scheme::engine::eval_begin(program, env.clone()).expect("inner install fail");
+    }
     }
 
     loop {
@@ -53,7 +55,11 @@ fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env) {
 
         // println!("\t{:?}", program.borrow());
 
-        let answer = self::scheme::engine::eval_begin(program, env.clone());
+        let answer = if !test {
+            self::scheme::engine::eval_begin(program, env.clone())
+        } else {
+            self::scheme::engine::proc_eval(program.borrow().car().unwrap(), env.clone())
+        };
 
         match answer {
             Ok(value) => println!("=> {:?}", value.borrow()),
@@ -116,6 +122,6 @@ fn main() {
         println!("\nAnswer: {:?}", ret.map(|x| x.borrow().clone()));
     }
     if repl {
-        self::repl(&rules, env.clone());
+        self::repl(&rules, env.clone(), test);
     }
 }

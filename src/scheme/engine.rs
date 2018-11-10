@@ -4,6 +4,308 @@ use super::symbol::*;
 use std::iter;
 use crate::utils::*;
 
+macro_rules! cont {
+    ($val: expr, $env: expr, $level: expr) => {
+        Datum::Continuation{ expr: $val.clone(), env: $env.clone(), level: $level }.wrap()
+    };
+}
+
+macro_rules! cont_expr {
+    ($cont: expr) => {
+        if let Datum::Continuation { ref expr, .. } = *$cont.clone().borrow() {
+            expr.clone()
+        } else {
+            Err(RuntimeError::new("ice: non-continuation in call stack"))?
+        }
+    };
+}
+
+macro_rules! cont_env {
+    ($cont: expr) => {
+        if let Datum::Continuation { ref env, .. } = *$cont.clone().borrow() {
+            env.clone()
+        } else {
+            Err(RuntimeError::new("ice: non-continuation in call stack"))?
+        }
+    };
+}
+
+macro_rules! cont_level {
+    ($cont: expr) => {
+        if let Datum::Continuation { ref level, .. } = *$cont.clone().borrow() {
+            level.clone()
+        } else {
+            Err(RuntimeError::new("ice: non-continuation in call stack"))?
+        }
+    };
+}
+
+pub fn proc_eval(term: Value, env: Env) -> Result<Value, RuntimeError> {
+    let mut stack_operands: Vec<Value> = Vec::new();
+    // let mut stack_operators: Vec<Value> = Vec::new();
+    let mut continuations: Vec<Value> = Vec::new();
+
+
+    continuations.push(cont!(term, env, 0));
+    // stack_operators.push(term);
+
+
+    while let Some(cont) = continuations.pop() {
+        let cc = cont_expr!(cont);
+        let env = cont_env!(cont);
+        let level = cont_level!(cont);
+
+        match *cc.clone().borrow() {
+            Datum::Pair(ref a, ref d) if level > 0 => {
+                if !a.borrow().is_holder() {
+                    let cc = List::clone(cc.clone());
+                    cc.borrow_mut().set_car(a.clone());
+                    continuations.push(cont!(cc, env, level));
+
+                    let mut list = List::new();
+                    for li in List::from(d.clone()) {
+                        if let ListItem::Item(val) = li {
+                            list = list.chain(iter::once(ListItem::Item(SymbolTable::holder()))).collect();
+                            continuations.push(cont!(val, env, level));
+                        } else if let ListItem::Ellipsis(val) = li {
+                            list = list.chain(iter::once(ListItem::Ellipsis(SymbolTable::holder()))).collect();
+                            continuations.push(cont!(val, env, level));
+                        }
+                    }
+                    cc.borrow_mut().set_cdr(list.into())?;
+                } else {
+                    let len = cc.borrow().len();
+                    let mut operands = List::new();
+                    for i in 0..len {
+                        operands = operands.chain(iter::once(ListItem::Item(stack_operands.pop().unwrap()))).collect();
+                    }
+                    stack_operands.push(cc.clone());
+                }
+            },
+            _ if level > 0 => {
+                stack_operands.push(cc.clone());
+            },
+            Datum::Pair(ref a, ref d) => {
+                match *a.clone().borrow() {
+                    Datum::SpecialForm(SpecialForm::Begin) => {
+                        let cc = List::clone(cc.clone());
+                        let mut list = cc.borrow().cdr()?.clone();
+                        loop {
+                            println!("Begin_iter {:?}", list.borrow());
+                            let aa = if let Ok(aa) = list.clone().borrow().car() { aa } else { break };
+                            if !aa.borrow().is_holder() {
+                                // stack_operators.push(cc.clone());
+                                continuations.push(cont!(cc, env, level));
+                                // stack_operators.push(aa.clone());
+                                continuations.push(cont!(aa, env, level));
+                                list.borrow_mut().set_car(SymbolTable::holder());
+                                break;
+                            }
+                            list = list.clone().borrow().cdr()?;
+                        }
+                        if list.borrow().is_nil() {
+                            let len = d.borrow().len();
+                            let ret = stack_operands.pop().unwrap();
+                            for _ in 0..len-1 {
+                                stack_operands.pop().unwrap();
+                            }
+                            stack_operands.push(ret);
+                        }
+                    },
+                    Datum::SpecialForm(SpecialForm::Quasiquote) => {
+                        
+                    },
+                    Datum::SpecialForm(SpecialForm::If) => {
+                        if !d.borrow().car()?.borrow().is_holder() {
+                            // stack_operators.push(cc.clone());
+                            continuations.push(cont!(cc, env, level));
+                            // stack_operators.push(d.borrow().car()?);
+                            continuations.push(cont!(d.borrow().car()?, env, level));
+                            d.borrow_mut().set_car(SymbolTable::holder());
+                        } else {
+                            let test = stack_operands.pop().unwrap();
+                            if test.borrow().is_true() {
+                                // stack_operators.push(d.borrow().cdr()?.borrow().car()?);
+                                continuations.push(cont!(d.borrow().cdr()?.borrow().car()?, env, level));
+                            } else {
+                                if let Ok(f_term) = d.borrow().cdr()?.borrow().cdr()?.borrow().car() {
+                                    // stack_operators.push(f_term);
+                                    continuations.push(cont!(f_term, env, level));
+                                } else {
+                                    // stack_operators.push(SymbolTable::unspecified());
+                                    continuations.push(cont!(SymbolTable::unspecified(), env, level));
+                                }
+                            }
+                        }
+                    },
+                    Datum::SpecialForm(SpecialForm::Define) => {
+                        if !d.borrow().cadr()?.borrow().is_holder() {
+                            // stack_operators.push(cc.clone());
+                            let cc = List::clone(cc.clone());
+                            continuations.push(cont!(cc, env, level));
+                            // stack_operators.push(d.borrow().cadr()?);
+                            continuations.push(cont!(d.borrow().cadr()?, env, level));
+                            cc.borrow().cdr()?.borrow().cdr()?.borrow_mut().set_car(SymbolTable::holder());
+                        } else {
+                            let id = if let Datum::Symbol(ref id) = *d.borrow().car()?.borrow() { id.clone() } else { return Err(RuntimeError::new("symbol not specified in define")) };
+                            let val = stack_operands.pop().unwrap();
+                            env.borrow_mut().put(id, val);
+                            stack_operands.push(d.borrow().car()?);
+                        }
+                    },
+                    Datum::SpecialForm(SpecialForm::Lambda) => {
+                        stack_operands.push(Datum::Lambda(LambdaExpression {
+                            formals: d.borrow().car()?.clone(),
+                            expr: d.borrow().cadr()?.clone(),
+                            env: env.clone()
+                        }).wrap());
+                    },
+                    Datum::SpecialForm(SpecialForm::SyntaxRules) => {
+                        let literals = d.borrow().car()?;
+                        let mut rules = List::new();
+                        for rule in List::from(d.borrow().cdr()?) {
+                            if let ListItem::Item(rule) = rule {
+                                let tf = Datum::TransformerSpec {
+                                    pattern: rule.borrow().car()?,
+                                    template: rule.borrow().cadr()?
+                                }.wrap();
+                                rules = rules.chain(iter::once(ListItem::Item(tf))).collect();
+                            }
+                        }
+                        stack_operands.push(Datum::Syntax {
+                            literals: literals,
+                            rules: rules.into()
+                        }.wrap());
+                    },
+                    Datum::SpecialForm(SpecialForm::DefineSyntax) => {
+                        if !d.borrow().cadr()?.borrow().is_holder() {
+                            // stack_operators.push(cc.clone());
+                            let cc = List::clone(cc.clone());
+                            continuations.push(cont!(cc, env, level));
+                            // stack_operators.push(d.borrow().cadr()?);
+                            continuations.push(cont!(d.borrow().cadr()?, env, level));
+                            cc.borrow().cdr()?.borrow().cdr()?.borrow_mut().set_car(SymbolTable::holder());
+                        } else {
+                            let id = if let Datum::Symbol(ref id) = *d.borrow().car()?.borrow() { id.clone() } else { return Err(RuntimeError::new("symbol not specified in define")) };
+                            let val = stack_operands.pop().unwrap();
+                            env.borrow_mut().put(id, val);
+                            stack_operands.push(d.borrow().car()?);
+                        }
+                    },          
+                    Datum::Syntax { ref literals, ref rules } => {
+                        let mut flag = false;
+                        for tf in List::from(rules) {
+                            if let ListItem::Item(val) = tf {
+                                if let Datum::TransformerSpec { ref pattern, ref template } = *val.borrow() {
+                                    if check_syntax_rule(pattern.clone(), d.clone(), literals.clone())? {
+                                        let env = Environment::forward(env.clone());
+                                        eval_pattern_match(pattern.clone(), d.clone(), env.clone());
+                                        continuations.push(cont!(template, env, level));
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if !flag {
+                            Err(RuntimeError::new(format!("unexpected syntax pattern {:?}", a.borrow())))?
+                        }
+                    },
+                    Datum::Symbol(_) | Datum::Pair(_, _) => {
+                        let operator = a.clone();
+                        // *a = SymbolTable::holder();
+                        // stack_operators.push(cc.clone());
+                        let cc = List::clone(cc.clone());
+                        cc.borrow_mut().set_car(SymbolTable::holder());
+                        continuations.push(cont!(cc, env, level));
+                        // stack_operators.push(operator.clone());
+                        continuations.push(cont!(operator, env, level));
+                    },
+                    Datum::Holder => {
+                        let operator = stack_operands.pop().unwrap();
+                        match *operator.clone().borrow() {
+                            Datum::Builtin(_) | Datum::Lambda(_) => {
+                                // stack_operators.push(cc.clone());
+                                let cc = List::clone(cc.clone());
+                                cc.borrow_mut().set_car(operator.clone());
+                                continuations.push(cont!(cc, env, level));
+                                // *a = operator.clone();
+
+                                let mut list = List::new();
+                                for li in List::from(d.clone()) {
+                                    if let ListItem::Item(val) = li {
+                                        list = list.chain(iter::once(ListItem::Item(SymbolTable::holder()))).collect();
+                                        continuations.push(cont!(val, env, level));
+                                    } else if let ListItem::Ellipsis(val) = li {
+                                        list = list.chain(iter::once(ListItem::Ellipsis(SymbolTable::holder()))).collect();
+                                        continuations.push(cont!(val, env, level));
+                                    }
+                                }
+                                cc.borrow_mut().set_cdr(list.into())?;
+                                // let mut list = d.clone();
+                                // loop {
+                                //     let aa = if let Ok(aa) = list.clone().borrow().car() { aa } else { break };
+                                //     // stack_operators.push(aa.clone());
+                                //     continuations.push(cont!(aa, env));
+                                //     list.borrow_mut().set_car(SymbolTable::holder());
+                                //     list = list.clone().borrow().cdr()?;
+                                // }
+                            },
+                            Datum::SpecialForm(_) | Datum::Syntax { .. } => {
+                                // *a = operator.clone();
+                                // stack_operators.push(cc.clone());
+                                let cc = List::clone(cc.clone());
+                                cc.borrow_mut().set_car(operator.clone())?;
+                                continuations.push(cont!(cc, env, level));
+                            },
+                            _ => {
+                                panic!("TODO")
+                            }
+                        }
+                    },
+                    Datum::Builtin(ref func) => {
+                        let len = d.borrow().len();
+                        let mut operands = List::new();
+                        for i in 0..len {
+                            operands = operands.chain(iter::once(ListItem::Item(stack_operands.pop().unwrap()))).collect();
+                        }
+                        stack_operands.push(func(operands.into())?);
+                    },
+                    Datum::Lambda(LambdaExpression { ref formals, ref expr, env: ref lambda_env }) => {
+                        let expr = List::clone(expr.clone());
+                        let len = d.borrow().len();
+                        let mut operands = List::new();
+                        for i in 0..len {
+                            operands = operands.chain(iter::once(ListItem::Item(stack_operands.pop().unwrap()))).collect();
+                        }
+                        // Extend environment
+                        let env = Environment::forward_with_name(lambda_env.clone(), format!("{:?}", a.borrow()));
+                        // if DEBUG!() { println!("Evaling lambda: params: {:?}, expr: {:?}\n\t{:?}", formals.borrow(), expr.borrow(), lambda_env.borrow()); }
+                        eval_pattern_match(formals.clone(), operands.into(), env.clone()).map_err(|_| RuntimeError::new("precedure params not match"))?;
+                        // eval_begin(expr.clone(), lambda_env.clone())
+                      
+                        // stack_operators.push(expr.clone());
+                        continuations.push(cont!(expr, env, level));
+                    },
+                    _ => {
+                        Err(RuntimeError::new(format!("{:?} is not applicable", a.borrow())))?
+                    }
+                }
+            },
+            Datum::Symbol(ref id) => {
+                stack_operands.push(env.borrow().find(id)?);
+            },
+            _ => {
+                stack_operands.push(cc.clone());                
+            }
+        }
+        println!("Loop : {:?}, {:?}", continuations, stack_operands);
+    }
+
+    stack_operands.pop().ok_or(RuntimeError::new("ice: unexpected return value"))
+
+}
+
 
 pub fn eval(term: Value, env: Env) -> Result<Value, RuntimeError> {
     let ret = eval_inner(term.clone(), env.clone())?;
@@ -336,4 +638,39 @@ pub fn eval_quasiquote(term: Value, env: Env) -> Result<Value, RuntimeError> {
         }
     }
     Ok(ret.into())
+}
+
+pub fn check_syntax_rule(pattern: Value, params: Value, literals: Value) -> Result<bool, RuntimeError> {
+    match *pattern.borrow() {
+        Datum::Symbol(ref id) => {
+            // env.borrow_mut().put(id.clone(), params.clone());
+            // println!("Env is {:?}", env);
+            // find if literals contains id, then params must be params
+            for r in List::from(literals) {
+                if let ListItem::Item(val) = r {
+                    if let Datum::Symbol(ref r) = *val.borrow() {
+                        if r == id {
+                            if let Datum::Symbol(ref rr) = *params.borrow() {
+                                return Ok(id == rr);
+                            } else {
+                                return Ok(false);
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(true)
+        },
+        Datum::Pair(ref a, ref d) => {
+            Ok(check_syntax_rule(a.clone(), params.borrow().car()?.clone(), literals.clone())?
+            && check_syntax_rule(d.clone(), params.borrow().cdr()?.clone(), literals.clone())?)
+        },
+        Datum::Nil => {
+            Ok(params.borrow().is_nil())
+        }
+        _ => {
+            Ok(false)
+            // Err(RuntimeError::new("Unexpected pattern matching"))
+        }
+    }
 }

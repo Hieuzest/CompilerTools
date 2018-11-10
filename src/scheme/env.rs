@@ -108,7 +108,9 @@ impl Environment {
             "eval" => Eval,
             "let" => Let,
             "let*" => Letstar,
-            "let-rec" => Letrec
+            "let-rec" => Letrec,
+            "define-syntax" => DefineSyntax,
+            "syntax-rules" => SyntaxRules
         ]);
 
         Environment {

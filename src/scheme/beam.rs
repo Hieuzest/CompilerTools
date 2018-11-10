@@ -52,8 +52,22 @@ pub enum Datum {
     SpecialForm(SpecialForm),
     Builtin(Box<fn(Value) -> Result<Value, RuntimeError>>),
     Lambda(LambdaExpression),
-    TransformerSpec(SyntaxRule),
-    SyntaxRules(Value),
+    TransformerSpec {
+        pattern: Value,
+        template: Value
+    },
+    // literals, transformerspecs
+    Syntax {
+        literals: Value,
+        rules: Value
+    },
+    Continuation {
+        expr: Value,
+        env: Env,
+        level: usize
+    },
+
+    Holder,
 }
 
 impl fmt::Debug for Datum {
@@ -81,6 +95,11 @@ impl fmt::Debug for Datum {
             Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:?}", val.borrow()),
             Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:?}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
+            Datum::Holder => write!(f, "_"),
+            Datum::Continuation { ref expr, ref env, ref level } => write!(f, "{:?}", expr.borrow()),
+            Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
+            Datum::Syntax { ref literals, ref rules } => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),
+            
             _ => write!(f, "<Unknown>")
         }
     }
@@ -109,6 +128,11 @@ impl fmt::Display for Datum {
             Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:}", val.borrow()),
             Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
+            Datum::Holder => write!(f, "_"),
+            Datum::Continuation { ref expr, ref env, ref level } => write!(f, "{:}", expr.borrow()),
+            Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
+            Datum::Syntax { ref literals, ref rules } => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),
+         
             _ => write!(f, "<Unknown>")
         }
     }
@@ -127,6 +151,10 @@ impl Datum {
 
     pub fn is_specified(&self) -> bool {
         if let Datum::Unspecified = self { false } else { true }
+    }
+    
+    pub fn is_holder(&self) -> bool {
+        if let Datum::Holder = self { true } else { false }
     }
 
     pub fn is_pair(&self) -> bool {
@@ -190,6 +218,15 @@ impl Datum {
     pub fn cadr(&self) -> Result<Value, RuntimeError> {
         self.cdr()?.borrow().car()
     }
+
+    pub fn len(&self) -> usize {
+        if let Datum::Pair(ref a, ref d) = self {
+            1 + List::from(d.clone()).collect::<Vec<_>>().len()
+        } else {
+            0
+        }
+        
+    }
 }
 
 
@@ -207,6 +244,18 @@ impl List {
 
     fn is_nil(&self) -> bool {
         self.item.as_ref().unwrap().borrow().is_nil()
+    }
+
+    pub fn clone(l: Value) -> Value {
+        List::from(l).collect::<List>().into()
+    }
+
+    pub fn clone_deep(l: Value) -> Value {
+        if l.borrow().is_pair() {
+            List::from(l).map(|x| x.map(|y| List::clone_deep(y))).collect::<List>().into()
+        } else {
+            l
+        }
     }
 }
 
@@ -279,12 +328,12 @@ pub enum ListItem {
 }
 
 impl ListItem {
-    // fn map<F: FnOnce(Value) -> Value>(self, f: F) -> Self {
-    //     match self {
-    //         ListItem::Item(val) => ListItem::Item(f(val)),
-    //         ListItem::Ellipsis(val) => ListItem::Ellipsis(f(val)),
-    //     }
-    // }
+    fn map<F: FnOnce(Value) -> Value>(self, f: F) -> Self {
+        match self {
+            ListItem::Item(val) => ListItem::Item(f(val)),
+            ListItem::Ellipsis(val) => ListItem::Ellipsis(f(val)),
+        }
+    }
 
     // fn try_map<F: FnOnce(Value) -> Result<Value, RuntimeError>>(self, f: F) -> Result<ListItem, RuntimeError> {
     //     match self {
@@ -323,20 +372,20 @@ pub struct LambdaExpression {
 
 impl fmt::Display for LambdaExpression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<lambda {:?} -> {:?}", self.formals.borrow(), self.expr.borrow())
+        write!(f, "<lambda {:?} -> {:?}>", self.formals.borrow(), self.expr.borrow())
     }
 }
 
 impl fmt::Debug for LambdaExpression {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "<lambda {:?} -> {:?} {:?}", self.formals.borrow(), self.expr.borrow(), self.env.borrow())
+        write!(f, "<lambda {:?} -> {:?} {:?}>", self.formals.borrow(), self.expr.borrow(), self.env.borrow())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct SyntaxRule {
-    pub literal: Value,
-    pub pattern: Value
+    pub pattern: Value,
+    pub template: Value
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -361,5 +410,6 @@ pub enum SpecialForm {
     Quasiquote,
     Unquote,
     UnquoteSplicing,
-    DefineSyntax
+    DefineSyntax,
+    SyntaxRules
 }

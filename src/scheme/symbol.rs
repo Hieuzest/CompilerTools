@@ -13,6 +13,7 @@ pub struct SymbolTable {
     sym_table: Rc<RefCell<HashMap<String, Value>>>,
     nil: Value,
     unspecified: Value,
+    holder: Value,
     bool_t: Value,
     bool_f: Value,
 }
@@ -23,6 +24,7 @@ impl SymbolTable {
             sym_table: Rc::new(RefCell::new(HashMap::new())),
             nil: Datum::Nil.wrap(),
             unspecified: Datum::Unspecified.wrap(),
+            holder: Datum::Holder.wrap(),
             bool_t: Datum::Boolean(true).wrap(),
             bool_f: Datum::Boolean(false).wrap()
         }
@@ -34,6 +36,10 @@ impl SymbolTable {
 
     pub fn unspecified() -> Value {
         SymbolTable::singleton().unspecified.clone()
+    }
+
+    pub fn holder() -> Value {
+        SymbolTable::singleton().holder.clone()
     }
 
     fn symbol_(&mut self, id: impl Into<String>) -> Value {
