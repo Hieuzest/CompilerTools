@@ -49,23 +49,22 @@ pub enum Datum {
 
 
     // Evaluated Value
+     
+    // Native syntax
     SpecialForm(SpecialForm),
+
+    //Native procedure
     Builtin(Box<fn(Value) -> Result<Value, RuntimeError>>),
+
     Lambda(LambdaExpression),
-    TransformerSpec {
-        pattern: Value,
-        template: Value
-    },
+    // TransformerSpec {
+    //     pattern: Value,
+    //     template: Value
+    // },
     // literals, transformerspecs
-    Syntax {
-        literals: Value,
-        rules: Value
-    },
-    Continuation {
-        expr: Value,
-        env: Env,
-        level: usize
-    },
+    Syntax(SyntaxRules),
+    
+    Continuation(Continuation),
 
     Holder,
 }
@@ -96,10 +95,9 @@ impl fmt::Debug for Datum {
             Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:?}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
             Datum::Holder => write!(f, "_"),
-            Datum::Continuation { ref expr, ref env, ref level } => write!(f, "{:?}", expr.borrow()),
-            Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
-            Datum::Syntax { ref literals, ref rules } => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),
-            
+            Datum::Continuation(ref cont) => write!(f, "{:?}", cont),
+            // Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
+            Datum::Syntax(SyntaxRules { ref literals, ref rules }) => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),     
             _ => write!(f, "<Unknown>")
         }
     }
@@ -129,9 +127,9 @@ impl fmt::Display for Datum {
             Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
             Datum::Holder => write!(f, "_"),
-            Datum::Continuation { ref expr, ref env, ref level } => write!(f, "{:}", expr.borrow()),
-            Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
-            Datum::Syntax { ref literals, ref rules } => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),
+            Datum::Continuation(ref cont) => write!(f, "{:?}", cont),
+            // Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
+            Datum::Syntax(SyntaxRules { ref literals, ref rules }) => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),
          
             _ => write!(f, "<Unknown>")
         }
@@ -151,10 +149,6 @@ impl Datum {
 
     pub fn is_specified(&self) -> bool {
         if let Datum::Unspecified = self { false } else { true }
-    }
-    
-    pub fn is_holder(&self) -> bool {
-        if let Datum::Holder = self { true } else { false }
     }
 
     pub fn is_pair(&self) -> bool {
@@ -227,6 +221,7 @@ impl Datum {
         }
         
     }
+
 }
 
 
@@ -383,9 +378,41 @@ impl fmt::Debug for LambdaExpression {
 }
 
 #[derive(Debug, Clone)]
-pub struct SyntaxRule {
-    pub pattern: Value,
-    pub template: Value
+pub struct SyntaxRules {
+    pub literals: Value,
+    pub rules: Value,
+}
+
+pub type Cont = Box<Continuation>;
+
+#[derive(Clone)]
+pub enum Continuation {
+    Return,
+    EvaluateList(Value, Env, usize, Cont),
+    EvaluateProcedure(Value, Value, Env, usize, Cont),
+    EvaluateApply(Value, Env, usize, Cont),
+    EvaluateBegin(Value, Env, usize, Cont),
+    EvaluateIf(Value, Env, usize, Cont),    
+    EvaluateDefine(Value, Env, usize, Cont),
+    EvaluateSyntax(Value, Env, usize, Cont),
+    // EvaluateSyntaxRules(Value, Env, usize, Cont),
+    EvaluateCallCC(Cont),
+}
+
+impl fmt::Debug for Continuation {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Continuation::Return => write!(f, "<Cont/Return>"),
+            Continuation::EvaluateList(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalList {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateProcedure(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalProc {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
+            Continuation::EvaluateApply(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalApply {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateBegin(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalBegin {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateIf(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalIf {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateDefine(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalDefine {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateSyntax(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalSyntax {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateCallCC(ref cont) => write!(f, "<Cont/CallCC :{:?}>", *cont),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -411,5 +438,6 @@ pub enum SpecialForm {
     Unquote,
     UnquoteSplicing,
     DefineSyntax,
-    SyntaxRules
+    SyntaxRules,
+    CallCC,
 }

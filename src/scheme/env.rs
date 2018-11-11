@@ -110,7 +110,9 @@ impl Environment {
             "let*" => Letstar,
             "let-rec" => Letrec,
             "define-syntax" => DefineSyntax,
-            "syntax-rules" => SyntaxRules
+            "syntax-rules" => SyntaxRules,
+            "call/cc" => CallCC,
+            "call-with-currenet-continuation" => CallCC
         ]);
 
         Environment {
@@ -123,6 +125,15 @@ impl Environment {
 
     pub fn new() -> Env {
         Environment::forward_with_name(Environment::global(), "program")
+    }
+
+    pub fn null() -> Env {
+        Environment {
+            name: String::new(),
+            datas: HashMap::new(),
+            parent: None,
+            ..Default::default()
+        }.wrap()    
     }
 
     pub fn put(&mut self, name: String, data: Rc<RefCell<Datum>>) {

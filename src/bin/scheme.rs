@@ -7,29 +7,29 @@ use coolc::lexer;
 use std::io::*;
 
 fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool) {
-    if !test {
-    let code = vec![
-        "(define (exit))",
-        "(define (cmds cmd arg . l) (if (null? l) (cmd arg) (begin (cmd arg) (cmds cmd . l))))",
-        "(begin (define dd display) (define (displays . l) (cmds dd . l)) (set! display displays))",
-        "(define (error x . l) (define (error-1 x) (begin (display 'err:) (display #\\space) (display x) (display #\\newline) )) (if (null? l) (begin (error-1 x) (exit)) (begin (error-1 x) (error . l))))",
-        "(define (> x y) (< y x))",
-        "(define (>= x y) (<= y x))",
-        "(define (square x) (* x x)",
-        "(define (ops op intial . l) (define (op-l-i sum x . l) (if (null? l) (op sum x) (op-l-i (op sum x) . l))) (op-l-i intial . l))",
-        "(begin (define oldop +) (define (op . l) (ops oldop 0 . l)) (set! + op))",
-        "(begin (define oldop -) (define (op x . l) (ops oldop x . l)) (set! - op))",
-        "(begin (define oldop *) (define (op . l) (ops oldop 1 . l)) (set! * op))",
-        "(begin (define oldop /) (define (op x . l) (ops oldop x . l)) (set! / op))",
-    ];
+    // if !test {
+    // let code = vec![
+    //     "(define (exit))",
+    //     "(define (cmds cmd arg . l) (if (null? l) (cmd arg) (begin (cmd arg) (cmds cmd . l))))",
+    //     "(begin (define dd display) (define (displays . l) (cmds dd . l)) (set! display displays))",
+    //     "(define (error x . l) (define (error-1 x) (begin (display 'err:) (display #\\space) (display x) (display #\\newline) )) (if (null? l) (begin (error-1 x) (exit)) (begin (error-1 x) (error . l))))",
+    //     "(define (> x y) (< y x))",
+    //     "(define (>= x y) (<= y x))",
+    //     "(define (square x) (* x x)",
+    //     "(define (ops op intial . l) (define (op-l-i sum x . l) (if (null? l) (op sum x) (op-l-i (op sum x) . l))) (op-l-i intial . l))",
+    //     "(begin (define oldop +) (define (op . l) (ops oldop 0 . l)) (set! + op))",
+    //     "(begin (define oldop -) (define (op x . l) (ops oldop x . l)) (set! - op))",
+    //     "(begin (define oldop *) (define (op . l) (ops oldop 1 . l)) (set! * op))",
+    //     "(begin (define oldop /) (define (op x . l) (ops oldop x . l)) (set! / op))",
+    // ];
 
 
-    for input in code {
-        let tokens: Vec<Token> = lexer::tokenize(input, &rules).unwrap();
-        let program = self::scheme::parser::parse(&tokens).unwrap();
-        self::scheme::engine::eval_begin(program, env.clone()).expect("inner install fail");
-    }
-    }
+    // for input in code {
+    //     let tokens: Vec<Token> = lexer::tokenize(input, &rules).unwrap();
+    //     let program = self::scheme::parser::parse(&tokens).unwrap();
+    //     self::scheme::engine::eval_begin(program, env.clone()).expect("inner install fail");
+    // }
+    // }
 
     loop {
         let mut input = String::new();
@@ -55,11 +55,7 @@ fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool
 
         // println!("\t{:?}", program.borrow());
 
-        let answer = if !test {
-            self::scheme::engine::eval_begin(program, env.clone())
-        } else {
-            self::scheme::engine::proc_eval(program.borrow().car().unwrap(), env.clone())
-        };
+        let answer = self::scheme::engine::eval(program.borrow().car().unwrap(), env.clone());
 
         match answer {
             Ok(value) => println!("=> {:?}", value.borrow()),
@@ -118,7 +114,7 @@ fn main() {
         let program = self::scheme::parser::parse(&tokens).unwrap();
         if debug { println!("{:?}", program); }
 
-        let ret = self::scheme::engine::eval_begin(program, env.clone());
+        let ret = self::scheme::engine::eval(program.borrow().car().unwrap(), env.clone());
         println!("\nAnswer: {:?}", ret.map(|x| x.borrow().clone()));
     }
     if repl {
