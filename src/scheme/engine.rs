@@ -4,6 +4,12 @@ use super::symbol::*;
 use std::iter;
 use crate::utils::*;
 
+macro_rules! DATUM {
+    ($expr: expr) => {
+        *$expr.clone().borrow()
+    };
+}
+
 macro_rules! CONT {
     ($cont: expr) => {
         Box::new($cont.clone())
@@ -20,31 +26,18 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
     let mut level: usize = 0;
     let mut expr = src;
     let mut env = env;
-    loop {
-        println!("Step: {:?} \t{:?} \n\t{:?}", action, expr.borrow(), cont);
+    'outer: loop {
+        if VERBOSE!() { println!("Step: {:?}  {} \t{:?} {:?} \n\t Cont {:?}", action, level, expr.borrow(), env.borrow(), cont); }
         match action {
             Action::Shift if level == 0 => {
                 match *expr.clone().borrow() {
                     Datum::Symbol(ref id) => {
                         action = Action::Reduce;
-                        expr = env.borrow().find(id)?;
+                        expr = env.borrow().find_syntax(id).or(env.borrow().find(id))?;
                     },
                     Datum::Pair(ref a, ref d) => {
                         cont = Continuation::EvaluateList(expr.clone(), env.clone(), level, CONT!(cont));
                         expr = a.clone();
-                    },
-                    Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => {
-                        expr = val.clone();
-                        action = Action::Reduce;
-                    },
-                    Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => {
-                        expr = val.clone();
-                        level += 1;
-                    },
-                    Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => {
-                        expr = val.clone();
-                        if level == 0 { Err(RuntimeError::new("Unexpected unquote"))? }
-                        level -= 1;
                     },
                     _ => {
                         action = Action::Reduce;
@@ -54,21 +47,8 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
             Action::Shift => {
                 match *expr.clone().borrow() {
                     Datum::Pair(ref a, ref d) => {
-                        cont = Continuation::EvaluateList(expr.clone(), env.clone(), level, CONT!(cont));
+                        cont = Continuation::ConstructList(List::new().into(), expr.borrow().cdr()?, env.clone(), level, CONT!(cont));
                         expr = a.clone();
-                    },
-                    Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => {
-                        expr = val.clone();
-                        action = Action::Reduce;
-                    },
-                    Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => {
-                        expr = val.clone();
-                        level += 1;
-                    },
-                    Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => {
-                        expr = val.clone();
-                        if level == 0 { Err(RuntimeError::new("Unexpected unquote"))? }
-                        level -= 1;
                     },
                     _ => {
                         action = Action::Reduce;
@@ -81,17 +61,17 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                         return Ok(expr);
                     },
                     Continuation::EvaluateCallCC(ref cont_) => {
-                        cont = Continuation::EvaluateApply(expr.clone(), env.clone(), level.clone(), cont_.clone());
-                        expr = Datum::Pair(Datum::Continuation(*cont_.clone()).wrap(), SymbolTable::nil()).wrap();
+                        cont = Continuation::EvaluateApply(expr.clone(), level.clone(), cont_.clone());
+                        expr = List::one(Datum::Continuation(*cont_.clone()).wrap()).into();
                     },
                     Continuation::EvaluateList(ref expr_, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
                         cont = *cont_.clone();
-                        action = Action::Shift;                
+                        action = Action::Shift;
                         match *expr.clone().borrow() {
                             Datum::Builtin(_) | Datum::Lambda(_) => {
-                                cont = Continuation::EvaluateApply(expr.clone(), env.clone(), level.clone(), CONT!(cont));
+                                cont = Continuation::EvaluateApply(expr.clone(), level.clone(), CONT!(cont));
                                 cont = Continuation::EvaluateProcedure(List::new().into(), expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                             },
                             Datum::Continuation(ref cont_) => {
@@ -99,20 +79,37 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                 cont = cont_.clone();
                             },
                             Datum::SpecialForm(SpecialForm::Begin) => {
-                                cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                if let Continuation::EvaluateBegin(ref e, _, _, ref c) = cont {
+                                    if e.borrow().is_nil() {
+                                        cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), c.clone());
+                                    } else {
+                                        cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                    }
+                                } else {
+                                    cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                }
                             },
                             Datum::SpecialForm(SpecialForm::Define) => {
                                 expr = expr_.borrow().cdr()?.borrow().cadr()?;
                                 cont = Continuation::EvaluateDefine(expr_.borrow().cadr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                             },
+                            Datum::SpecialForm(SpecialForm::DefineSyntax) => {
+                                expr = expr_.borrow().cdr()?.borrow().cadr()?;
+                                cont = Continuation::EvaluateDefineSyntax(expr_.borrow().cadr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                            },
                             Datum::SpecialForm(SpecialForm::If) => {
                                 expr = expr_.borrow().cadr()?;
                                 cont = Continuation::EvaluateIf(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                             },
+                            Datum::SpecialForm(SpecialForm::Set) => {
+                                expr = expr_.borrow().cdr()?.borrow().cadr()?;
+                                cont = Continuation::EvaluateSet(expr_.borrow().cadr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                            },
                             Datum::SpecialForm(SpecialForm::SyntaxRules) => {
                                 expr = Datum::Syntax(SyntaxRules {
                                     literals: expr_.borrow().cadr()?,
-                                    rules: expr_.borrow().cdr()?.borrow().cdr()?
+                                    rules: expr_.borrow().cdr()?.borrow().cdr()?,
+                                    env: env.clone(),
                                 }).wrap();
                                 action = Action::Reduce;
                             },
@@ -137,21 +134,18 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                 level += 1;
                             },
                             Datum::SpecialForm(SpecialForm::Unquote) => {
-                                expr = expr_.borrow().cadr()?;
-                                if level == 0 { Err(RuntimeError::new("Unexpected unquote"))? }
-                                level -= 1;
+                                error!("Unexpected unquote")?
                             },
                             Datum::SpecialForm(SpecialForm::UnquoteSplicing) => {
-                                expr = expr_.borrow().cadr()?;
-                                if level == 0 { Err(RuntimeError::new("Unexpected unquote"))? }
-                                level -= 1;
+                                error!("Unexpected unquote-splicing")?
                             },
-                            Datum::Syntax(SyntaxRules { ref literals, ref rules }) => {
+                            Datum::Syntax(SyntaxRules { ref literals, ref rules, ref env }) => {
                                 let rules = List::from(rules.clone());
                                 let mut flag_ok = false;
                                 for li in rules {
                                     if let ListItem::Item(rule) = li {
                                         if let Ok(true) = check_syntax_rule(rule.borrow().car()?.borrow().cdr()?, expr_.borrow().cdr()?, literals.clone()) {
+                                            // println!("Syntax checked : {:?} {:?} {:?}", rule.borrow(), rule.borrow().car()?.borrow().cdr()?, expr_.borrow().cdr()?);
                                             flag_ok = true;
                                             let null_env = Environment::null();
                                             eval_pattern_match(rule.borrow().car()?.borrow().cdr()?, expr_.borrow().cdr()?, null_env.clone())?;
@@ -161,15 +155,14 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                         }
                                     }
                                 }
-                                if !flag_ok { Err(RuntimeError::new("syntex not matched"))? }
+                                if !flag_ok { error!("syntex not matched : {:?}", expr.borrow())? }
                             },
                             _ => {
-                                Err(RuntimeError::new(format!("{:?} is not applicable", expr_)))?
+                                error!("{:?} is not applicable", expr_.borrow())?
                             }
                         }
                     },
-                    Continuation::EvaluateApply(ref expr_, ref env_, ref level_, ref cont_) => {
-                        env = Environment::forward(env_.clone());
+                    Continuation::EvaluateApply(ref expr_, ref level_, ref cont_) => {
                         level = level_.clone();
                         cont = *cont_.clone();
                         match *expr_.clone().borrow() {
@@ -177,13 +170,14 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                 expr = func(expr.clone())?;
                                 action = Action::Reduce;
                             },
-                            Datum::Lambda(LambdaExpression { ref formals, expr: ref expr_, ref env }) => {
-                                eval_pattern_match(formals.clone(), expr.clone(), env.clone());
+                            Datum::Lambda(LambdaExpression { ref formals, expr: ref expr_, env: ref env_ }) => {
+                                env = Environment::forward(env_.clone());
+                                eval_pattern_match(formals.clone(), expr.clone(), env.clone())?;
                                 action = Action::Shift;
                                 expr = expr_.clone();
                             },
                             _ => {
-                                Err(RuntimeError::new(format!("unapplicable passed to apply : {:?}", expr.borrow())))?
+                                error!("unapplicable passed to apply : {:?}", expr.borrow())?
                             }
                         }
                     },
@@ -194,16 +188,31 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                         if cdr.borrow().is_nil() {
                             action = Action::Reduce;
                             let mut list = List::from(car);
-                            list = list.chain(iter::once(ListItem::Item(expr.clone()))).collect();
+                            list.extend(iter::once(ListItem::Item(expr.clone())));
                             list.next();
                             expr = list.into();
                         } else {
                             action = Action::Shift;
                             let mut list = List::from(car);
-                            list = list.chain(iter::once(ListItem::Item(expr.clone()))).collect();
-                            expr = cdr.borrow().car()?.clone();
-                            cont = Continuation::EvaluateProcedure(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                            
+                            list.extend(iter::once(ListItem::Item(expr.clone())));
+                            if cdr.borrow().is_pair() {
+                                expr = cdr.borrow().car()?.clone();
+                                cont = Continuation::EvaluateProcedure(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                            } else {
+                                expr = cdr.clone();
+                                cont = Continuation::EvaluateProcedureSplicing(list.into(), SymbolTable::nil(), env.clone(), level.clone(), CONT!(cont));
+                            }
                         }
+                    },
+                    Continuation::EvaluateProcedureSplicing(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
+                        env = env_.clone();
+                        level = level_.clone();
+                        cont = *cont_.clone();                        
+                        action = Action::Reduce;
+                        let mut list = List::from(car);
+                        list.extend(iter::once(ListItem::Ellipsis(expr.clone())));
+                        list.next();
+                        expr = list.into();
                     },
                     Continuation::EvaluateBegin(ref expr_, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
@@ -217,15 +226,42 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                            
                         }
                     },
+                    Continuation::EvaluateSet(ref expr_, ref env_, ref level_, ref cont_) => {
+                        env = env_.clone();
+                        level = level_.clone();
+                        cont = *cont_.clone();
+                        action = Action::Reduce;
+                        // Check for non-syntax
+                        if let Datum::Symbol(ref id) = *expr_.borrow() {
+                            env.borrow_mut().set(id, expr.clone())?;
+                        } else {
+                            error!("expected symbol in set : {:?}", expr_.borrow())?
+                        }
+                        expr = expr_.clone();
+                    },
                     Continuation::EvaluateDefine(ref expr_, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
                         cont = *cont_.clone();
                         action = Action::Reduce;
+                        // Check for non-syntax
                         if let Datum::Symbol(ref id) = *expr_.borrow() {
                             env.borrow_mut().put(id.clone(), expr.clone());
                         } else {
-                            Err(RuntimeError::new("xpected symbol in define"))?
+                            error!("expected symbol in define : {:?}", expr_.borrow())?
+                        }
+                        expr = expr_.clone();
+                    },
+                    Continuation::EvaluateDefineSyntax(ref expr_, ref env_, ref level_, ref cont_) => {
+                        env = env_.clone();
+                        level = level_.clone();
+                        cont = *cont_.clone();
+                        action = Action::Reduce;
+                        // Check for syntax
+                        if let Datum::Symbol(ref id) = *expr_.borrow() {
+                            env.borrow_mut().put_syntax(id.clone(), expr.clone());
+                        } else {
+                            error!("expected symbol in define : {:?}", expr_.borrow())?
                         }
                         expr = expr_.clone();
                     },
@@ -245,7 +281,6 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                         }
                     },
                     Continuation::EvaluateSyntax(ref expr_, ref env_, ref level_, ref cont_) => {
-
                         env = env_.clone();
                         level = level_.clone();
                         cont = *cont_.clone();
@@ -260,8 +295,87 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             }
                         }
                     },
+                    Continuation::ConstructList(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
+                        env = env_.clone();
+                        level = level_.clone();
+                        cont = *cont_.clone();
+                        if cdr.borrow().is_nil() {
+                            action = Action::Reduce;
+                            let mut list = List::from(car);
+                            list.extend(iter::once(ListItem::Item(expr.clone())));
+                            expr = list.into();
+                            continue 'outer;
+                        } else if car.borrow().len() == 0 && cdr.borrow().len() == 1 {
+                            if let Datum::Symbol(ref id) = *expr.clone().borrow() {
+                                if let Ok(val) = env.borrow().find_syntax(id) {
+                                    match *val.borrow() {
+                                        Datum::SpecialForm(SpecialForm::Quasiquote) => {
+                                            action = Action::Shift;
+                                            let mut list = List::from(car);
+                                            list.extend(iter::once(ListItem::Item(expr.clone())));
+                                            expr = cdr.borrow().car()?.clone();
+                                            cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                            level = level + 1;
+                                            continue 'outer;
+                                        },
+                                        Datum::SpecialForm(SpecialForm::Unquote) => {
+                                            action = Action::Shift;
+                                            if level == 1 {
+                                                // cont = Continuation::ConstructList(car.clone(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                                // using outer continuation
+                                            } else {
+                                                let mut list = List::from(car);
+                                                list.extend(iter::once(ListItem::Item(expr.clone())));
+                                                cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                                    
+                                            }
+                                            expr = cdr.borrow().car()?.clone();
+                                            level = level - 1;
+                                            continue 'outer;
+                                        },
+                                        Datum::SpecialForm(SpecialForm::UnquoteSplicing) => {
+                                            action = Action::Shift;
+                                            if level == 1 {
+                                                // transform outer continuation
+                                                cont = cont.splicing()?;
+                                            } else {
+                                                let mut list = List::from(car);
+                                                list.extend(iter::once(ListItem::Item(expr.clone())));
+                                                cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                                    
+                                            }
+                                            expr = cdr.borrow().car()?.clone();
+                                            level = level - 1;
+                                            continue 'outer;
+                                        },
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
+                        action = Action::Shift;
+                        let mut list = List::from(car);
+                        list.extend(iter::once(ListItem::Item(expr.clone())));
+                        expr = cdr.borrow().car()?.clone();
+                        cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                    },
+                    Continuation::ConstructListSplicing(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
+                        env = env_.clone();
+                        level = level_.clone();
+                        cont = *cont_.clone();
+                        if cdr.borrow().is_nil() {
+                            action = Action::Reduce;
+                            let mut list = List::from(car);
+                            list.extend(List::from(expr.clone()));
+                            expr = list.into();
+                        } else {
+                            action = Action::Shift;
+                            let mut list = List::from(car);
+                            list.extend(List::from(expr.clone()));
+                            expr = cdr.borrow().car()?.clone();
+                            cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                            
+                        }
+                    },
                     _ => {
-                        Err(RuntimeError::new(format!("Unknown continuation passed : {:?}", cont)))?
+                        error!("Unknown continuation passed : {:?}", cont)?
                     }
                 }
             }
@@ -269,64 +383,6 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
         
     }
 }
-
-// pub fn eval_list(term: Value, env: Env) -> Result<Value, RuntimeError> {
-//     let mut ret = List::new();
-//     let mut list = List::from(term);
-//     while let Some(next) = list.next() {
-//         if let ListItem::Item(x) = next {
-//             ret = ret.chain(iter::once(ListItem::Item(eval(x, env.clone())?))).collect();
-//         } else if let ListItem::Ellipsis(x) = next {
-//             ret = ret.chain(iter::once(ListItem::Ellipsis(eval(x, env.clone())?))).collect();
-//         }
-//     }
-//     Ok(ret.into())
-// }
-
-// pub fn eval_begin(term: Value, env: Env) -> Result<Value, RuntimeError> {
-//     let mut ret = SymbolTable::unspecified();
-//     let mut list = List::from(term);
-//     while let Some(next) = list.next() {
-//         if let ListItem::Item(x) = next {
-//             ret = eval(x, env.clone())?;
-//         } else {
-//             Err(RuntimeError::new("Unexpected form in begin"))?
-//         }
-//     }
-//     Ok(ret)
-// }
-
-// pub fn eval_and(term: Value, env: Env) -> Result<Value, RuntimeError> {
-//     let mut ret = SymbolTable::bool(true);
-//     let mut list = List::from(term);
-//     while let Some(next) = list.next() {
-//         if let ListItem::Item(x) = next {
-//             ret = eval(x, env.clone())?;            
-//             if ret.borrow().is_false() {
-//                 break;
-//             }
-//         } else {
-//             Err(RuntimeError::new("Unexpected form in and"))?
-//         }
-//     }
-//     Ok(ret)
-// }
-
-// pub fn eval_or(term: Value, env: Env) -> Result<Value, RuntimeError> {
-//     let mut ret = SymbolTable::bool(false);
-//     let mut list = List::from(term);
-//     while let Some(next) = list.next() {
-//         if let ListItem::Item(x) = next {
-//             ret = eval(x.clone(), env.clone())?;
-//             if ret.borrow().is_true() {
-//                 break;
-//             }
-//         } else {
-//             Err(RuntimeError::new("Unexpected form in or"))?
-//         }
-//     }
-//     Ok(ret)
-// }
 
 pub fn eval_pattern_match(pattern: Value, params: Value, env: Env) -> Result<(), RuntimeError> {
     match *pattern.borrow() {
@@ -345,68 +401,10 @@ pub fn eval_pattern_match(pattern: Value, params: Value, env: Env) -> Result<(),
             Ok(())
         }
         _ => {
-            Err(RuntimeError::new("Unexpected pattern matching"))
+            error!("Unexpected pattern matching : binding {:?} to {:?}", pattern, params)
         }
     }
 }
-
-// pub fn eval_quasiquote(term: Value, env: Env) -> Result<Value, RuntimeError> {
-//     let mut ret = List::new();
-//     let mut list = List::from(term);
-//     while let Some(next) = list.next() {
-//         if let ListItem::Item(x) = next {
-//             match *x.borrow() {
-//                 Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => {
-//                     ret = ret.chain(iter::once(ListItem::Item(
-//                         eval(val.clone(), env.clone())?
-//                     ))).collect();
-//                 },
-//                 Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => {
-//                     ret = ret.chain(List::from(
-//                         eval(val.clone(), env.clone())?
-//                     )).collect();
-//                 },
-//                 _ => {
-//                     // if let Datum::Pair(ref a, ref d) = *x.borrow() {
-//                     //     if let Datum::Symbol(ref id) = *a.borrow() {
-//                     //         if id == "unquote" {
-//                     //             ret = ret.chain(iter::once(ListItem::Item(
-//                     //                 eval(d.clone(), env.clone())?
-//                     //             ))).collect();
-//                     //             continue;
-//                     //         } else if id == "unquote-splicing" {
-//                     //             ret = ret.chain(List::from(
-//                     //                 eval(d.clone(), env.clone())?
-//                     //             )).collect();
-//                     //             continue;
-//                     //         }
-//                     //     }
-//                     // }
-//                     ret = ret.chain(iter::once(ListItem::Item(
-//                         x.clone()
-//                     ))).collect();
-//                 }
-//             }
-//         } else if let ListItem::Ellipsis(x) = next {
-//             match *x.borrow() {
-//                 Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => {
-//                     ret = ret.chain(iter::once(ListItem::Ellipsis(
-//                         eval(val.clone(), env.clone())?
-//                     ))).collect();
-//                 },
-//                 Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => {
-//                     Err(RuntimeError::new(",@ in unexpected context"))?
-//                 },
-//                 _ => {
-//                     ret = ret.chain(iter::once(ListItem::Ellipsis(
-//                         x.clone()
-//                     ))).collect();
-//                 }
-//             }
-//         }
-//     }
-//     Ok(ret.into())
-// }
 
 pub fn check_syntax_rule(pattern: Value, template: Value, literals: Value) -> Result<bool, RuntimeError> {
     match *pattern.borrow() {
@@ -453,11 +451,8 @@ pub fn eval_template(expr: Value, env:Env) -> Result<Value, RuntimeError> {
         Datum::Pair(ref a, ref d) => {
             Ok(Datum::Pair(eval_template(a.clone(), env.clone())?, eval_template(d.clone(), env.clone())?).wrap())
         },
-        Datum::Nil => {
-            Ok(expr.clone())
-        }
         _ => {
-            Err(RuntimeError::new("Unexpected pattern matching"))
+            Ok(expr.clone())
         }
     }
 }

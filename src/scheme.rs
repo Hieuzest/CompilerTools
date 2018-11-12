@@ -1,4 +1,4 @@
-
+#[macro_use]
 pub mod beam;
 mod core;
 #[macro_use]

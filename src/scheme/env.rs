@@ -40,6 +40,7 @@ macro_rules! sforms(
 pub struct Environment {
     name: String,
     datas: HashMap<String, Rc<RefCell<Datum>>>,
+    syntaxs: HashMap<String, Rc<RefCell<Datum>>>,
     parent: Option<Rc<RefCell<Environment>>>,
 }
 
@@ -62,7 +63,7 @@ impl Environment {
     }
 
     fn global() -> Env {
-        let mut m = builtins![
+        let m = builtins![
             "=" => core::eq,
             "<" => core::lt,
             "<=" => core::le,
@@ -82,42 +83,45 @@ impl Environment {
             "string?" => core::is_string,
             "symbol?" => core::is_symbol,
             "pair?" => core::is_pair,
+            "set-car!" => core::set_car,
+            "set-cdr!" => core::set_cdr,
 
             "display" => |v| {
                 print!("{:}", v.borrow().car()?.borrow());
                 Ok(SymbolTable::unspecified())
             }
         ];
-        m.extend(sforms![
+        let sm = sforms![
             "begin" => Begin,
             "define" => Define,
             "lambda" => Lambda,
             "set!" => Set,
-            "set-car!" => SetCar,
-            "set-cdr!" => SetCdr,
-            "and" => And,
-            "or" => Or,
+            // "set-car!" => SetCar,
+            // "set-cdr!" => SetCdr,
+            // "and" => And,
+            // "or" => Or,
             "if" => If,
-            "else" => Else,
-            "cond" => Cond,
+            // "else" => Else,
+            // "cond" => Cond,
             "quote" => Quote,
             "quasiquote" => Quasiquote,
             "unquote" => Unquote,
             "unquote-splicing" => UnquoteSplicing,
-            "apply" => Apply,
-            "eval" => Eval,
-            "let" => Let,
-            "let*" => Letstar,
-            "let-rec" => Letrec,
+            // "apply" => Apply,
+            // "eval" => Eval,
+            // "let" => Let,
+            // "let*" => Letstar,
+            // "let-rec" => Letrec,
             "define-syntax" => DefineSyntax,
             "syntax-rules" => SyntaxRules,
             "call/cc" => CallCC,
             "call-with-currenet-continuation" => CallCC
-        ]);
+        ];
 
         Environment {
             name: String::from(global_env),
             datas: m,
+            syntaxs: sm,
             parent: None,
             ..Default::default()
         }.wrap()
@@ -129,8 +133,6 @@ impl Environment {
 
     pub fn null() -> Env {
         Environment {
-            name: String::new(),
-            datas: HashMap::new(),
             parent: None,
             ..Default::default()
         }.wrap()    
@@ -162,9 +164,34 @@ impl Environment {
         }
     }
 
+    pub fn put_syntax(&mut self, name: String, data: Rc<RefCell<Datum>>) {
+        self.syntaxs.insert(name, data);
+    }
+
+    pub fn set_syntax(&mut self, name: &String, data: Rc<RefCell<Datum>>) -> Result<Rc<RefCell<Datum>>, RuntimeError> {
+        if let Some(d) = self.syntaxs.get_mut(name) {
+            let old = d.clone();
+            *d = data;
+            Ok(old)
+        } else if let Some(p) = &mut self.parent {
+            p.borrow_mut().set_syntax(name, data)
+        } else {
+            Err(RuntimeError::new(format!("No variable named {:}", name)))
+        }        
+    }
+
+    pub fn find_syntax(&self, name: &String) -> Result<Rc<RefCell<Datum>>, RuntimeError> {
+        if let Some(d) = self.syntaxs.get(name) {
+            Ok(d.clone())
+        } else if let Some(p) = &self.parent {
+            p.borrow().find_syntax(name)
+        } else {
+            Err(RuntimeError::new(format!("No variable named {:}", name)))
+        }
+    }
+
     pub fn forward(curr: Env) -> Env {
         Environment {
-            datas: HashMap::new(),
             parent: Some(curr.clone()),
             ..Default::default()
         }.wrap()
@@ -173,7 +200,6 @@ impl Environment {
     pub fn forward_with_name(curr: Env, name: impl Into<String>) -> Env {
         Environment {
             name: name.into(),
-            datas: HashMap::new(),
             parent: Some(curr.clone()),
             ..Default::default()    
         }.wrap()

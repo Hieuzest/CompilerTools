@@ -126,3 +126,17 @@ pub fn is_eq(operands: Value) -> Result<Value, RuntimeError> {
     let d = operands.borrow().cadr()?;
     return Ok(SymbolTable::bool(&*a.borrow() as *const _ == &*d.borrow() as *const _));
 }
+
+pub fn set_car(operands: Value) -> Result<Value, RuntimeError> {
+    let a = operands.borrow().car()?;
+    let d = operands.borrow().cadr()?;
+    a.borrow_mut().set_car(d)?;    
+    Ok(SymbolTable::unspecified())
+}
+
+pub fn set_cdr(operands: Value) -> Result<Value, RuntimeError> {
+    let a = operands.borrow().car()?;
+    let d = operands.borrow().cadr()?;
+    a.borrow_mut().set_cdr(d)?;    
+    Ok(SymbolTable::unspecified())
+}

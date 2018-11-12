@@ -13,6 +13,12 @@ pub struct RuntimeError {
     msg: String
 }
 
+macro_rules! error {
+    ($($arg:tt)*) => (
+        Err(RuntimeError::new(format!($($arg)*)))
+    )
+}
+
 impl RuntimeError {
     pub fn new(s: impl Into<String>) -> Self {
         RuntimeError {
@@ -22,13 +28,13 @@ impl RuntimeError {
 }
 
 
-#[derive(Debug, Copy, Clone)]
-pub enum AbbrevPrefix {
-    Quote,
-    Quasiquote,
-    Unquote,
-    UnquoteSplicing,
-}
+// #[derive(Debug, Copy, Clone)]
+// pub enum AbbrevPrefix {
+//     Quote,
+//     Quasiquote,
+//     Unquote,
+//     UnquoteSplicing,
+// }
 
 #[derive(Clone)]
 pub enum Datum {
@@ -42,8 +48,7 @@ pub enum Datum {
     Unspecified,
 
     Pair(Value, Value),
-    // Non-s-expr
-    Abbreviation(AbbrevPrefix, Value),
+    // Abbreviation(AbbrevPrefix, Value),
 
     // Vector(Vec<Datum>),
 
@@ -53,20 +58,16 @@ pub enum Datum {
     // Native syntax
     SpecialForm(SpecialForm),
 
+    Syntax(SyntaxRules),
+
     //Native procedure
     Builtin(Box<fn(Value) -> Result<Value, RuntimeError>>),
 
     Lambda(LambdaExpression),
-    // TransformerSpec {
-    //     pattern: Value,
-    //     template: Value
-    // },
-    // literals, transformerspecs
-    Syntax(SyntaxRules),
+
     
     Continuation(Continuation),
 
-    Holder,
 }
 
 impl fmt::Debug for Datum {
@@ -89,15 +90,15 @@ impl fmt::Debug for Datum {
             // Datum::Pair(ref a, ref d) => write!(f, "({:?} . {:?})", *a.borrow(), *d.borrow()),
             Datum::Builtin(ref func) => write!(f, "<Builtin {:?}>", func),
             Datum::Lambda(ref lambda) => write!(f, "{:?}", lambda),
-            Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => write!(f, "'{:?}", val.borrow()),
-            Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => write!(f, "`{:?}", val.borrow()),
-            Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:?}", val.borrow()),
-            Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:?}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => write!(f, "'{:?}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => write!(f, "`{:?}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:?}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:?}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
-            Datum::Holder => write!(f, "_"),
+            // Datum::Holder => write!(f, "_"),
             Datum::Continuation(ref cont) => write!(f, "{:?}", cont),
             // Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
-            Datum::Syntax(SyntaxRules { ref literals, ref rules }) => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),     
+            Datum::Syntax(ref syntax) => write!(f, "{:?}", syntax),
             _ => write!(f, "<Unknown>")
         }
     }
@@ -121,15 +122,15 @@ impl fmt::Display for Datum {
             // Datum::Pair(ref a, ref d) => write!(f, "({:?} . {:?})", *a.borrow(), *d.borrow()),
             Datum::Builtin(ref func) => write!(f, "{:?}", func),
             Datum::Lambda(ref lambda) => write!(f, "{:}", lambda),
-            Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => write!(f, "'{:}", val.borrow()),
-            Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => write!(f, "`{:}", val.borrow()),
-            Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:}", val.borrow()),
-            Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::Quote, ref val) => write!(f, "'{:}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::Quasiquote, ref val) => write!(f, "`{:}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::Unquote, ref val) => write!(f, ",{:}", val.borrow()),
+            // Datum::Abbreviation(AbbrevPrefix::UnquoteSplicing, ref val) => write!(f, ",@{:}", val.borrow()),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
-            Datum::Holder => write!(f, "_"),
+            // Datum::Holder => write!(f, "_"),
             Datum::Continuation(ref cont) => write!(f, "{:?}", cont),
             // Datum::TransformerSpec { ref pattern, ref template } => write!(f, "<SyntaxRule {:?} -> {:?}>", pattern.borrow(), template.borrow()),
-            Datum::Syntax(SyntaxRules { ref literals, ref rules }) => write!(f, "<Syntax {:?} {:?}>", literals.borrow(), rules.borrow()),
+            Datum::Syntax(ref syntax) => write!(f, "{:?}", syntax),
          
             _ => write!(f, "<Unknown>")
         }
@@ -171,8 +172,16 @@ impl Datum {
         if let Datum::Number(_) = self { true } else { false }
     }
 
+    pub fn as_number(&self) -> Result<f64, RuntimeError> {
+        if let Datum::Number(ref n) = self { Ok(*n) } else { Err(RuntimeError::new(format!("Expected number: {:?}", self))) }
+    }
+
     pub fn is_symbol(&self) -> bool {
         if let Datum::Symbol(_) = self { true } else { false }
+    }
+
+    pub fn as_symbol(&self) -> Result<String, RuntimeError> {
+        if let Datum::Symbol(ref id) = self { Ok(id.clone()) } else { Err(RuntimeError::new(format!("Expected symbol: {:?}", self))) }
     }
 
     pub fn car(&self) -> Result<Value, RuntimeError> {
@@ -237,6 +246,10 @@ impl List {
         }
     }
 
+    pub fn one(val: Value) -> Self {
+        List::new().chain(iter::once(ListItem::Item(val))).collect()
+    }
+
     fn is_nil(&self) -> bool {
         self.item.as_ref().unwrap().borrow().is_nil()
     }
@@ -294,13 +307,11 @@ impl iter::FromIterator<ListItem> for List {
     }
 }
 
-// impl Extend<ListItem> for List {
-//     fn extend<I: IntoIterator<Item = ListItem>>(&mut self, list: I) {
-//         let mut l = self.collect::<Vec<ListItem>>();
-//         l.extend(list.into_iter().collect::<Vec<ListItem>>());
-//         *self = l.into_iter().collect();
-//     }
-// }
+impl Extend<ListItem> for List {
+    fn extend<I: IntoIterator<Item = ListItem>>(&mut self, list: I) {
+        *self = self.chain(list.into_iter()).collect();
+    }
+}
 
 impl From<Value> for List {
     fn from(value: Value) -> List {
@@ -377,10 +388,17 @@ impl fmt::Debug for LambdaExpression {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SyntaxRules {
     pub literals: Value,
     pub rules: Value,
+    pub env: Env,
+}
+
+impl fmt::Debug for SyntaxRules {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "<syntax {:?} {:?} {:?}>", self.literals.borrow(), self.rules.borrow(), self.env.borrow())
+    }
 }
 
 pub type Cont = Box<Continuation>;
@@ -390,13 +408,29 @@ pub enum Continuation {
     Return,
     EvaluateList(Value, Env, usize, Cont),
     EvaluateProcedure(Value, Value, Env, usize, Cont),
-    EvaluateApply(Value, Env, usize, Cont),
+    EvaluateProcedureSplicing(Value, Value, Env, usize, Cont),
+    EvaluateApply(Value, usize, Cont),
+    // FinishApply(Value, Env, usize, Cont),
     EvaluateBegin(Value, Env, usize, Cont),
     EvaluateIf(Value, Env, usize, Cont),    
+    EvaluateSet(Value, Env, usize, Cont),
     EvaluateDefine(Value, Env, usize, Cont),
+    EvaluateDefineSyntax(Value, Env, usize, Cont),
     EvaluateSyntax(Value, Env, usize, Cont),
     // EvaluateSyntaxRules(Value, Env, usize, Cont),
     EvaluateCallCC(Cont),
+    ConstructList(Value, Value, Env, usize, Cont),
+    ConstructListSplicing(Value, Value, Env, usize, Cont),
+}
+
+impl Continuation {
+    pub fn splicing(self) -> Result<Continuation, RuntimeError> {
+        if let Continuation::ConstructList(car, cdr, env, level, cont) = self {
+            Ok(Continuation::ConstructListSplicing(car, cdr, env, level, cont))
+        } else {
+            Err(RuntimeError::new("ice: failed to splice a non quasiquote list"))
+        }
+    }
 }
 
 impl fmt::Debug for Continuation {
@@ -405,12 +439,19 @@ impl fmt::Debug for Continuation {
             Continuation::Return => write!(f, "<Cont/Return>"),
             Continuation::EvaluateList(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalList {:?} :{:?}>", expr.borrow(), *cont),
             Continuation::EvaluateProcedure(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalProc {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
-            Continuation::EvaluateApply(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalApply {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateProcedureSplicing(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalProcS {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
+            Continuation::EvaluateApply(ref expr, ref level, ref cont) => write!(f, "<Cont/EvalApply {:?} :{:?}>", expr.borrow(), *cont),
+            // Continuation::FinishApply(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/FisApply {:?} :{:?}>", expr.borrow(), *cont),
             Continuation::EvaluateBegin(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalBegin {:?} :{:?}>", expr.borrow(), *cont),
             Continuation::EvaluateIf(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalIf {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateSet(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalSet {:?} :{:?}>", expr.borrow(), *cont),
             Continuation::EvaluateDefine(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalDefine {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateDefineSyntax(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalDefineSyntax {:?} :{:?}>", expr.borrow(), *cont),
             Continuation::EvaluateSyntax(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalSyntax {:?} :{:?}>", expr.borrow(), *cont),
             Continuation::EvaluateCallCC(ref cont) => write!(f, "<Cont/CallCC :{:?}>", *cont),
+            Continuation::ConstructList(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/CList {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
+            Continuation::ConstructListSplicing(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/CListS {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
+
         }
     }
 }

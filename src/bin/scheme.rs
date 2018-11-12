@@ -41,7 +41,7 @@ fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool
             Ok(n) if n > 0 => (),
             _ => break
         }
-        
+        if input.trim().is_empty() { continue; }
 
         let tokens: Vec<Token> = lexer::tokenize(input.as_str(), &rules).unwrap();
 
