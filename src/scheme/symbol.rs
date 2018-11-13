@@ -5,6 +5,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::mem;
 use std::thread;
+use std::io::{stdin, stdout};
 
 use std::collections::HashMap;
 
@@ -15,6 +16,8 @@ pub struct SymbolTable {
     unspecified: Value,
     bool_t: Value,
     bool_f: Value,
+    stdin: Value,
+    stdout: Value,
 }
 
 impl SymbolTable {
@@ -24,7 +27,9 @@ impl SymbolTable {
             nil: Datum::Nil.wrap(),
             unspecified: Datum::Unspecified.wrap(),
             bool_t: Datum::Boolean(true).wrap(),
-            bool_f: Datum::Boolean(false).wrap()
+            bool_f: Datum::Boolean(false).wrap(),
+            stdin: Datum::Port(Port::Input(Rc::new(RefCell::new(std::io::stdin())))).wrap(),
+            stdout: Datum::Port(Port::Output(Rc::new(RefCell::new(std::io::stdout())))).wrap(),
         }
     }
 
@@ -70,6 +75,14 @@ impl SymbolTable {
         Datum::String(s).wrap()
     }
 
+    pub fn stdin() -> Value {
+        SymbolTable::singleton().stdin.clone()
+    }
+
+    pub fn stdout() -> Value {
+        SymbolTable::singleton().stdout.clone()
+    }
+
     pub fn singleton() -> SymbolTable {
         static mut SINGLETON: *const SymbolTable = 0 as *const _;
         static ONCE: Once = ONCE_INIT;
@@ -81,6 +94,5 @@ impl SymbolTable {
             (*SINGLETON).clone()
         }
     }
-
 
 }

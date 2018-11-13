@@ -2,6 +2,7 @@ use super::beam::*;
 use super::env::*;
 use super::symbol::*;
 use std::iter;
+use std::rc::*;
 use crate::utils::*;
 
 macro_rules! DATUM {
@@ -21,13 +22,14 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
     enum Action {
         Shift, Reduce
     }
-    let mut action = Action::Shift;
+    let mut action = Action::Reduce;
     let mut cont = Continuation::Return;
-    let mut level: usize = 0;
-    let mut expr = src;
+    let mut expr = SymbolTable::nil();
     let mut env = env;
+    let mut level: usize = 0;
+    cont = Continuation::EvaluateBegin(src, env.clone(), level.clone(), CONT!(cont));
     'outer: loop {
-        if VERBOSE!() { println!("Step: {:?}  {} \t{:?} {:?} \n\t Cont {:?}", action, level, expr.borrow(), env.borrow(), cont); }
+        if VERBOSE!() { println!("Ref: {} Step: {:?}  {} \t{:?} {:?} \n\t Cont {:?}", Rc::strong_count(&expr), action, level, expr.borrow(), env.borrow(), cont); }
         match action {
             Action::Shift if level == 0 => {
                 match *expr.clone().borrow() {
@@ -47,7 +49,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
             Action::Shift => {
                 match *expr.clone().borrow() {
                     Datum::Pair(ref a, ref d) => {
-                        cont = Continuation::ConstructList(List::new().into(), expr.borrow().cdr()?, env.clone(), level, CONT!(cont));
+                        cont = Continuation::QuasiquoteList(List::new().into(), expr.borrow().cdr()?, env.clone(), level, CONT!(cont));
                         expr = a.clone();
                     },
                     _ => {
@@ -79,6 +81,8 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                 cont = cont_.clone();
                             },
                             Datum::SpecialForm(SpecialForm::Begin) => {
+                                action = Action::Reduce;
+                                expr = SymbolTable::nil();
                                 if let Continuation::EvaluateBegin(ref e, _, _, ref c) = cont {
                                     if e.borrow().is_nil() {
                                         cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), c.clone());
@@ -104,6 +108,10 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             Datum::SpecialForm(SpecialForm::Set) => {
                                 expr = expr_.borrow().cdr()?.borrow().cadr()?;
                                 cont = Continuation::EvaluateSet(expr_.borrow().cadr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                            },
+                            Datum::SpecialForm(SpecialForm::SetSyntax) => {
+                                expr = expr_.borrow().cdr()?.borrow().cadr()?;
+                                cont = Continuation::EvaluateSetSyntax(expr_.borrow().cadr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                             },
                             Datum::SpecialForm(SpecialForm::SyntaxRules) => {
                                 expr = Datum::Syntax(SyntaxRules {
@@ -184,7 +192,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                     Continuation::EvaluateProcedure(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
-                        cont = *cont_.clone();                        
+                        cont = *cont_.clone();
                         if cdr.borrow().is_nil() {
                             action = Action::Reduce;
                             let mut list = List::from(car);
@@ -207,7 +215,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                     Continuation::EvaluateProcedureSplicing(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
-                        cont = *cont_.clone();                        
+                        cont = *cont_.clone();
                         action = Action::Reduce;
                         let mut list = List::from(car);
                         list.extend(iter::once(ListItem::Ellipsis(expr.clone())));
@@ -217,13 +225,13 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                     Continuation::EvaluateBegin(ref expr_, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
-                        cont = *cont_.clone();                        
+                        cont = *cont_.clone();
                         if expr_.borrow().is_nil() {
                             action = Action::Reduce;
                         } else {
                             action = Action::Shift;
                             expr = expr_.borrow().car()?.clone();
-                            cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                            
+                            cont = Continuation::EvaluateBegin(expr_.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                         }
                     },
                     Continuation::EvaluateSet(ref expr_, ref env_, ref level_, ref cont_) => {
@@ -236,6 +244,19 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             env.borrow_mut().set(id, expr.clone())?;
                         } else {
                             error!("expected symbol in set : {:?}", expr_.borrow())?
+                        }
+                        expr = expr_.clone();
+                    },
+                    Continuation::EvaluateSetSyntax(ref expr_, ref env_, ref level_, ref cont_) => {
+                        env = env_.clone();
+                        level = level_.clone();
+                        cont = *cont_.clone();
+                        action = Action::Reduce;
+                        // Check for non-syntax
+                        if let Datum::Symbol(ref id) = *expr_.borrow() {
+                            env.borrow_mut().set_syntax(id, expr.clone())?;
+                        } else {
+                            error!("expected symbol in set-syntax : {:?}", expr_.borrow())?
                         }
                         expr = expr_.clone();
                     },
@@ -295,7 +316,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             }
                         }
                     },
-                    Continuation::ConstructList(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
+                    Continuation::QuasiquoteList(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
                         cont = *cont_.clone();
@@ -314,19 +335,19 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                             let mut list = List::from(car);
                                             list.extend(iter::once(ListItem::Item(expr.clone())));
                                             expr = cdr.borrow().car()?.clone();
-                                            cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                            cont = Continuation::QuasiquoteList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                                             level = level + 1;
                                             continue 'outer;
                                         },
                                         Datum::SpecialForm(SpecialForm::Unquote) => {
                                             action = Action::Shift;
                                             if level == 1 {
-                                                // cont = Continuation::ConstructList(car.clone(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                                // cont = Continuation::QuasiquoteList(car.clone(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                                                 // using outer continuation
                                             } else {
                                                 let mut list = List::from(car);
                                                 list.extend(iter::once(ListItem::Item(expr.clone())));
-                                                cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                                    
+                                                cont = Continuation::QuasiquoteList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                                             }
                                             expr = cdr.borrow().car()?.clone();
                                             level = level - 1;
@@ -340,7 +361,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                             } else {
                                                 let mut list = List::from(car);
                                                 list.extend(iter::once(ListItem::Item(expr.clone())));
-                                                cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                                    
+                                                cont = Continuation::QuasiquoteList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                                             }
                                             expr = cdr.borrow().car()?.clone();
                                             level = level - 1;
@@ -350,14 +371,21 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                     }
                                 }
                             }
+                        } else if !cdr.borrow().is_pair() {
+                            action = Action::Shift;
+                            let mut list = List::from(car);
+                            list.extend(iter::once(ListItem::Item(expr.clone())));
+                            expr = cdr.clone();
+                            cont = Continuation::QuasiquoteListSplicing(list.into(), SymbolTable::nil(), env.clone(), level.clone(), CONT!(cont));
+                            continue 'outer;
                         }
                         action = Action::Shift;
                         let mut list = List::from(car);
                         list.extend(iter::once(ListItem::Item(expr.clone())));
                         expr = cdr.borrow().car()?.clone();
-                        cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                        cont = Continuation::QuasiquoteList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                     },
-                    Continuation::ConstructListSplicing(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
+                    Continuation::QuasiquoteListSplicing(ref car, ref cdr, ref env_, ref level_, ref cont_) => {
                         env = env_.clone();
                         level = level_.clone();
                         cont = *cont_.clone();
@@ -371,7 +399,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             let mut list = List::from(car);
                             list.extend(List::from(expr.clone()));
                             expr = cdr.borrow().car()?.clone();
-                            cont = Continuation::ConstructList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));                            
+                            cont = Continuation::QuasiquoteList(list.into(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                         }
                     },
                     _ => {

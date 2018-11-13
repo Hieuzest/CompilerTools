@@ -81,18 +81,24 @@ pub fn parse_datum(mut src: Node) -> Result<Value, RuntimeError> {
             "#\\space" => ' ',
             _ => src.value.value_.chars().skip(2).next().ok_or(error!("Error when parsing char")?)?
         }),
-        "LGroup" => if src.len() == 0 { SymbolTable::nil() }
-        else if src.len() == 2 && src.childs[1].value.type_.as_str() == "Dot" {
+        "LGroup" => if src.len() == 0 {
+            SymbolTable::nil()
+        } else if src.len() == 2 && src.childs[1].value.type_.as_str() == "Dot" {
             Datum::Pair(parse_datum(src.childs.remove(0))?, parse_datum(src.childs.remove(0))?).wrap()
         } else {
             Datum::Pair(parse_datum(src.childs.remove(0))?, parse_datum(src)?).wrap()
+        },
+        "VGroup" => if src.len() == 0 {
+            Datum::Vector(vec![]).wrap()
+        } else {
+            Datum::Vector(src.childs.into_iter().map(|x| parse_datum(x).unwrap()).collect()).wrap()
         },
         "Dot" => parse_datum(src.childs.remove(0))?,
         // "VGroup" => Datum::Vector(src.childs.into_iter().map(|x| parse_datum(x)).collect()),
         "Symbolize" => Datum::Pair(SymbolTable::symbol("quote"), List::one(parse_datum(src.clone().childs.into_iter().next().ok_or(()).or(error!("Error parsing quote : {:?}", src))?)?).into()).wrap(),
         "Template" => Datum::Pair(SymbolTable::symbol("quasiquote"), List::one(parse_datum(src.childs.into_iter().next().ok_or(()).or(error!("Error parsing {:?}", "Quasiquote"))?)?).into()).wrap(),
         "Comma" => Datum::Pair(SymbolTable::symbol("unquote"), List::one(parse_datum(src.childs.into_iter().next().ok_or(()).or(error!("Error parsing {:?}", "Unquote"))?)?).into()).wrap(),
-        "Comma_Splicing" => Datum::Pair(SymbolTable::symbol("unquote-splicing"), List::one(parse_datum(src.childs.into_iter().next().ok_or(()).or(error!("Error parsing {:?}", "UnquoteSplicing")?)?)?).into()).wrap(),
+        "Comma_Splicing" => Datum::Pair(SymbolTable::symbol("unquote-splicing"), List::one(parse_datum(src.childs.into_iter().next().ok_or(()).or(error!("Error parsing {:?}", "UnquoteSplicing"))?)?).into()).wrap(),
         _ => SymbolTable::symbol(src.value.value_)
     })
 }

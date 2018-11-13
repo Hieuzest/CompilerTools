@@ -4,7 +4,7 @@ use super::core;
 use crate::utils::*;
 
 use std::fmt;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::cell::RefCell;
 
 use std::collections::HashMap;
@@ -71,21 +71,61 @@ impl Environment {
             "-" => core::sub,
             "*" => core::mul,
             "/" => core::div,
+            "modulo" => core::modulo,
+
+            "sin" => core::sin,
+            "cos" => core::cos,
+            "tan" => core::tan,
+            "asin" => core::asin,
+            "acos" => core::acos,
+            "atan" => core::atan,
+            "atan2" => core::atan2,
+            "log" => core::log,
+            "exp" => core::exp,
+
             "not" => core::not,
             "cons" => core::cons,
             "car" => core::car,
             "cdr" => core::cdr,
             "cadr" => core::cadr,
             "list" => core::list,
+
+            "char=" => core::char_eq,
+
             "null?" => core::is_null,
             "eq?" => core::is_eq,
+            "eqv?" => core::is_eqv,
             "number?" => core::is_number,
+            "boolean?" => core::is_boolean,
             "string?" => core::is_string,
+            "port?" => core::is_port,
+            "input-port?" => core::is_input_port,
+            "output-port?" => core::is_output_port,
             "symbol?" => core::is_symbol,
             "pair?" => core::is_pair,
+            "vector?" => core::is_vector,
+
+            "make-vector" => core::make_vector,
+            "vector-ref" => core::vector_ref,
+            "vector-set" => core::vector_set,
+            
             "set-car!" => core::set_car,
             "set-cdr!" => core::set_cdr,
 
+            "string->symbol" => core::string_to_symbol,
+            "symbol->string" => core::symbol_to_string,
+            "number->string" => core::number_to_string,
+
+
+            "current-input-port" => |v| Ok(SymbolTable::stdin()),
+            "current-output-port" => |v| Ok(SymbolTable::stdout()),
+            
+            "open-input-file" => core::open_input_file,
+            "open-output-file" => core::open_output_file,
+            "close-input-file" => core::close_input_file,
+            "close-output-file" => core::close_output_file,
+
+            "read-char" => core::read_char,
             "display" => |v| {
                 print!("{:}", v.borrow().car()?.borrow());
                 Ok(SymbolTable::unspecified())
@@ -96,6 +136,7 @@ impl Environment {
             "define" => Define,
             "lambda" => Lambda,
             "set!" => Set,
+            "set-syntax!" => SetSyntax,
             // "set-car!" => SetCar,
             // "set-cdr!" => SetCdr,
             // "and" => And,
@@ -138,11 +179,11 @@ impl Environment {
         }.wrap()    
     }
 
-    pub fn put(&mut self, name: String, data: Rc<RefCell<Datum>>) {
+    pub fn put(&mut self, name: String, data: Value) {
         self.datas.insert(name, data);
     }
 
-    pub fn set(&mut self, name: &String, data: Rc<RefCell<Datum>>) -> Result<Rc<RefCell<Datum>>, RuntimeError> {
+    pub fn set(&mut self, name: &String, data: Value) -> Result<Value, RuntimeError> {
         if let Some(d) = self.datas.get_mut(name) {
             let old = d.clone();
             *d = data;
@@ -154,7 +195,7 @@ impl Environment {
         }        
     }
 
-    pub fn find(&self, name: &String) -> Result<Rc<RefCell<Datum>>, RuntimeError> {
+    pub fn find(&self, name: &String) -> Result<Value, RuntimeError> {
         if let Some(d) = self.datas.get(name) {
             Ok(d.clone())
         } else if let Some(p) = &self.parent {
@@ -164,11 +205,11 @@ impl Environment {
         }
     }
 
-    pub fn put_syntax(&mut self, name: String, data: Rc<RefCell<Datum>>) {
+    pub fn put_syntax(&mut self, name: String, data: Value) {
         self.syntaxs.insert(name, data);
     }
 
-    pub fn set_syntax(&mut self, name: &String, data: Rc<RefCell<Datum>>) -> Result<Rc<RefCell<Datum>>, RuntimeError> {
+    pub fn set_syntax(&mut self, name: &String, data: Value) -> Result<Value, RuntimeError> {
         if let Some(d) = self.syntaxs.get_mut(name) {
             let old = d.clone();
             *d = data;
@@ -180,7 +221,7 @@ impl Environment {
         }        
     }
 
-    pub fn find_syntax(&self, name: &String) -> Result<Rc<RefCell<Datum>>, RuntimeError> {
+    pub fn find_syntax(&self, name: &String) -> Result<Value, RuntimeError> {
         if let Some(d) = self.syntaxs.get(name) {
             Ok(d.clone())
         } else if let Some(p) = &self.parent {
@@ -205,21 +246,4 @@ impl Environment {
         }.wrap()
     }
     
-    // pub fn clone(curr: Env) -> Env {
-    //     Environment {
-    //         datas: curr.clone().borrow().datas.clone(),
-    //         parent: Some(curr.clone()),
-    //         ..Default::default()
-    //     }.wrap()
-    // }
-
-    // pub fn clone_with_name(curr: Env, name: impl Into<String>) -> Env {
-    //     Environment {
-    //         name: name.into(),
-    //         datas: curr.clone().borrow().datas.clone(),
-    //         parent: Some(curr.clone()),
-    //         ..Default::default()
-    //     }.wrap()
-    // }
-
 }   

@@ -1,9 +1,16 @@
+#![feature(alloc_system)]
+extern crate alloc_system;
+
+#[global_allocator]
+static GLOBAL: alloc_system::System = alloc_system::System;
+
 use argparse::{ArgumentParser, Store, StoreTrue};
 use coolc::utils::*;
 use coolc::scheme;
 use coolc::lexer::Token;
 use coolc::lexer;
 
+use coolc::scheme::beam::*;
 use std::io::*;
 
 fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool) {
@@ -41,7 +48,7 @@ fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool
             Ok(n) if n > 0 => (),
             _ => break
         }
-        if input.trim().is_empty() { continue; }
+        // if input.trim().is_empty() { return; }
 
         let tokens: Vec<Token> = lexer::tokenize(input.as_str(), &rules).unwrap();
 
@@ -54,11 +61,19 @@ fn repl(rules: &Vec<lexer::RegularRule>, env: self::scheme::env::Env, test: bool
         };
 
         // println!("\t{:?}", program.borrow());
-
-        let answer = self::scheme::engine::eval(program.borrow().car().unwrap(), env.clone());
+        // use std::rc::Rc;
+        // println!("{}", Rc::strong_count(&program));
+        let answer = self::scheme::engine::eval(program, env.clone());
+        // } else {
+        //     Err(RuntimeError::new("error"))
+        // };
 
         match answer {
-            Ok(value) => println!("=> {:?}", value.borrow()),
+            Ok(value) => {
+                // println!("{}", Rc::strong_count(&value.borrow().cdr().unwrap()));
+                println!("=> {:?}", value.borrow());
+                drop(value)
+            },
             Err(e) => println!("Error: {:?}", e)
         }
         
@@ -114,10 +129,10 @@ fn main() {
         let program = self::scheme::parser::parse(&tokens).unwrap();
         if debug { println!("{:?}", program); }
 
-        let ret = self::scheme::engine::eval(program.borrow().car().unwrap(), env.clone());
+        let ret = self::scheme::engine::eval(program, env.clone());
         println!("\nAnswer: {:?}", ret.map(|x| x.borrow().clone()));
     }
     if repl {
-        self::repl(&rules, env.clone(), test);
+        self::repl(&rules, env, test);
     }
 }
