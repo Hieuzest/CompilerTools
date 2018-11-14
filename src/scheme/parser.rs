@@ -1,6 +1,7 @@
 use crate::lexer::Token;
 use super::beam::*;
 use super::symbol::*;
+use super::number::*;
 use crate::utils::tree;
 use crate::utils::tree::{TreeNode, NodeZipper};
 
@@ -73,13 +74,21 @@ pub fn parse_datum(mut src: Node) -> Result<Value, RuntimeError> {
         // "Cond" => Datum::SpecialForm(SpecialForm::Cond),
         // "If" => Datum::SpecialForm(SpecialForm::If),
         // "Quote" => Datum::SpecialForm(SpecialForm::Quote),
-        "Number" => SymbolTable::number(src.value.value_.parse().or(error!("Error parsing {:?}", src))?),
+        "Number" => {
+            if let Ok(x) = src.value.value_.parse::<i64>() {
+                SymbolTable::number(x)
+            } else if let Ok(x) = src.value.value_.parse::<f64>() {
+                SymbolTable::number(Real::from(x))
+            } else {
+                error!("Error parsing {:?}", src)?
+            }
+        },
         "String" => SymbolTable::string(src.value.value_[1..src.value.value_.len()-1].to_string()),
         "Boolean" => SymbolTable::bool(src.value.value_.as_str() == "#t"),
         "Character" => SymbolTable::character(match src.value.value_.as_str() {
             "#\\newline" => '\n',
             "#\\space" => ' ',
-            _ => src.value.value_.chars().skip(2).next().ok_or(error!("Error when parsing char")?)?
+            _ => src.value.value_.chars().skip(2).next().ok_or(()).or(error!("Error when parsing char"))?
         }),
         "LGroup" => if src.len() == 0 {
             SymbolTable::nil()

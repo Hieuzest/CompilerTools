@@ -1,5 +1,6 @@
 use super::env::*;
 use super::symbol::*;
+use super::number::*;
 use std::iter;
 use std::str::FromStr;
 use std::rc::{Rc, Weak};
@@ -36,7 +37,7 @@ impl RuntimeError {
 pub enum Datum {
     // Atomic
     Boolean(bool),
-    Number(f64),
+    Number(Number),
     Character(char),
     String(String),
     Symbol(String),
@@ -218,6 +219,13 @@ impl Datum {
         if let Datum::Vector(ref mut vector) = self { Ok(vector) } else { Err(RuntimeError::new(format!("Expected vector: {:?}", self))) }
     }
 
+    pub fn is_procedure(&self) -> bool {
+        if let Datum::Builtin(_) = self { true }
+        else if let Datum::Lambda(_) = self { true }
+        else if let Datum::Continuation(_) = self { true }
+        else { false }
+    }
+
     pub fn is_string(&self) -> bool {
         if let Datum::String(_) = self { true } else { false }
     }
@@ -235,7 +243,7 @@ impl Datum {
         if let Datum::Number(_) = self { true } else { false }
     }
 
-    pub fn as_number(&self) -> Result<f64, RuntimeError> {
+    pub fn as_number(&self) -> Result<Number, RuntimeError> {
         if let Datum::Number(ref n) = self { Ok(*n) } else { Err(RuntimeError::new(format!("Expected number: {:?}", self))) }
     }
 

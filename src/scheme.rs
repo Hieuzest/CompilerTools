@@ -6,3 +6,4 @@ pub mod env;
 pub mod parser;
 pub mod engine;
 pub mod symbol;
+pub mod number;

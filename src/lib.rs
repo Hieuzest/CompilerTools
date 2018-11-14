@@ -1,3 +1,4 @@
+#![feature(euclidean_division)]
 extern crate argparse;
 extern crate serde;
 #[macro_use]

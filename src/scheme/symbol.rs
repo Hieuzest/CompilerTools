@@ -1,4 +1,5 @@
 use super::beam::*;
+use super::number::*;
 use super::env::*;
 use std::sync::{Once, ONCE_INIT};
 use std::rc::Rc;
@@ -63,8 +64,8 @@ impl SymbolTable {
         }
     }
 
-    pub fn number(n: f64) -> Value {
-        Datum::Number(n).wrap()
+    pub fn number(n: impl Into<Number>) -> Value {
+        Datum::Number(n.into()).wrap()
     }
 
     pub fn character(c: char) -> Value {

@@ -71,7 +71,26 @@ impl Environment {
             "-" => core::sub,
             "*" => core::mul,
             "/" => core::div,
+//            "modulo" => core::modulo,
+
+            "quotient" => core::quotient,
+            "remainder" => core::remainder,
             "modulo" => core::modulo,
+
+            "floor" => core::floor,
+            "ceiling" => core::ceiling,
+            "round" => core::round,
+            "truncate" => core::truncate,
+
+            "numerator" => core::numerator,
+            "denominator" => core::denominator,
+
+            "make-rectangular" => core::make_rectangular,
+            "make-polar" => core::make_polar,
+            "real-part" => core::real_part,
+            "imag-part" => core::imag_part,
+            "magnitude" => core::magnitude,
+            "angle" => core::angle,
 
             "sin" => core::sin,
             "cos" => core::cos,
@@ -96,6 +115,10 @@ impl Environment {
             "eq?" => core::is_eq,
             "eqv?" => core::is_eqv,
             "number?" => core::is_number,
+            "integer?" => core::is_integer,
+            "rational?" => core::is_rational,
+            "real?" => core::is_real,
+            "complex" => core::is_complex,
             "boolean?" => core::is_boolean,
             "string?" => core::is_string,
             "port?" => core::is_port,
@@ -103,18 +126,26 @@ impl Environment {
             "output-port?" => core::is_output_port,
             "symbol?" => core::is_symbol,
             "pair?" => core::is_pair,
+            "list?" => core::is_list,
             "vector?" => core::is_vector,
+            "procedure?" => core::is_procedure,
 
             "make-vector" => core::make_vector,
             "vector-ref" => core::vector_ref,
             "vector-set" => core::vector_set,
-            
+
+            "make-string" => core::make_string,
+            "string-ref" => core::string_ref,
+            "string-set" => core::string_set,
+
             "set-car!" => core::set_car,
             "set-cdr!" => core::set_cdr,
 
             "string->symbol" => core::string_to_symbol,
             "symbol->string" => core::symbol_to_string,
             "number->string" => core::number_to_string,
+            "char->integer" => core::char_to_integer,
+            "integer->char" => core::integer_to_char,
 
 
             "current-input-port" => |v| Ok(SymbolTable::stdin()),
@@ -126,6 +157,7 @@ impl Environment {
             "close-output-file" => core::close_output_file,
 
             "read-char" => core::read_char,
+            "write-char" => core::write_char,
             "display" => |v| {
                 print!("{:}", v.borrow().car()?.borrow());
                 Ok(SymbolTable::unspecified())
