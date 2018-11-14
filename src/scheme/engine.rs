@@ -326,7 +326,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                             list.extend(iter::once(ListItem::Item(expr.clone())));
                             expr = list.into();
                             continue 'outer;
-                        } else if car.borrow().len() == 0 && cdr.borrow().len() == 1 {
+                        } else if cdr.borrow().is_pair() && cdr.borrow().len() == 1 {
                             if let Datum::Symbol(ref id) = *expr.clone().borrow() {
                                 if let Ok(val) = env.borrow().find_syntax(id) {
                                     match *val.borrow() {
@@ -342,7 +342,7 @@ pub fn eval(src: Value, env: Env) -> Result<Value, RuntimeError> {
                                         Datum::SpecialForm(SpecialForm::Unquote) => {
                                             action = Action::Shift;
                                             if level == 1 {
-                                                // cont = Continuation::QuasiquoteList(car.clone(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
+                                                 cont = Continuation::QuasiquoteListSplicing(car.clone(), cdr.borrow().cdr()?.clone(), env.clone(), level.clone(), CONT!(cont));
                                                 // using outer continuation
                                             } else {
                                                 let mut list = List::from(car);
