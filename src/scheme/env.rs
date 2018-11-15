@@ -71,7 +71,6 @@ impl Environment {
             "-" => core::sub,
             "*" => core::mul,
             "/" => core::div,
-//            "modulo" => core::modulo,
 
             "quotient" => core::quotient,
             "remainder" => core::remainder,

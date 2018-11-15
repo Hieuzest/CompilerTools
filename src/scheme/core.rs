@@ -12,15 +12,6 @@ use std::io::prelude::*;
 use std::fs::File;
 
 
-fn gcd(a: i64, b: i64) -> i64 {
-    let (a, b) = (a.abs(), b.abs());
-    if a < b { let (a, b) = (b, a); }
-    while b > 0 {
-        let (a, b) = (b, a % b);
-    }
-    a
-}
-
 pub fn not(operands: Value) -> Result<Value, RuntimeError> {
     if let Datum::Boolean(b) = *operands.borrow().car()?.borrow() {
         return Ok(SymbolTable::bool(!b));
@@ -71,17 +62,16 @@ num_binary_op!(add, |x, y| x + y);
 num_binary_op!(sub, |x, y| x - y);
 num_binary_op!(mul, |x, y| x * y);
 num_binary_op!(div, |x, y| x / y);
-//num_binary_op!(modulo, |x, y| x % y);
 
 real_unary_op!(sin, sin);
 real_unary_op!(cos, cos);
 real_unary_op!(tan, tan);
-//
+
 real_unary_op!(asin, asin);
 real_unary_op!(acos, acos);
 real_unary_op!(atan, atan);
 real_binary_op!(atan2, atan2);
-//
+
 real_unary_op!(log, ln);
 real_unary_op!(exp, exp);
 
@@ -234,8 +224,8 @@ pub fn is_procedure(operands: Value) -> Result<Value, RuntimeError> {
 pub fn is_eqv(operands: Value) -> Result<Value, RuntimeError> {
     let a = operands.borrow().car()?;
     let d = operands.borrow().cadr()?;
-//    if a.borrow().is_number() && d.borrow().is_number() { eq(operands) }
-    if a.borrow().is_character() && d.borrow().is_character() { char_eq(operands) }
+    if a.borrow().is_number() && d.borrow().is_number() { eq(operands) }
+    else if a.borrow().is_character() && d.borrow().is_character() { char_eq(operands) }
     else if a.borrow().is_boolean() && d.borrow().is_boolean() { Ok(SymbolTable::bool(a.borrow().as_boolean()? == d.borrow().as_boolean()?)) }
     else { Ok(SymbolTable::bool(&*a.borrow() as *const _ == &*d.borrow() as *const _)) }
 }
