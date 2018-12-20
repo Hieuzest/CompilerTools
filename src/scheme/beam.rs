@@ -7,7 +7,7 @@ use std::rc::{Rc, Weak};
 use std::cell::RefCell;
 use std::fmt;
 use std::fs::File;
-use std::io::{Write, Read};
+use std::io::{Write, Read, BufRead};
 
 pub type Value = Rc<RefCell<Datum>>;
 pub type ValueRef = Weak<RefCell<Datum>>;
@@ -60,10 +60,14 @@ pub enum Datum {
     //Native procedure
     Builtin(Box<fn(Value) -> Result<Value, RuntimeError>>),
 
+    BuiltinExt(SpecialProcedure),
+
     Lambda(LambdaExpression),
 
     
     Continuation(Continuation),
+
+    Environment(Env),
 
 }
 
@@ -92,10 +96,12 @@ impl fmt::Debug for Datum {
                 ListItem::Ellipsis(x) => format!(". {:?}", x.borrow())
             }))),
             Datum::Builtin(ref func) => write!(f, "<Builtin {:?}>", func),
+            Datum::BuiltinExt(ref func) => write!(f, "<Builtin {:?}>", func),
             Datum::Lambda(ref lambda) => write!(f, "{:?}", lambda),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
             Datum::Continuation(ref cont) => write!(f, "{:?}", cont),
             Datum::Syntax(ref syntax) => write!(f, "{:?}", syntax),
+            Datum::Environment(ref env) => write!(f, "<Env {:?}>", env.borrow()),
             Datum::Port(ref port) => write!(f, "{:?}", port),
             _ => write!(f, "<Unknown>")
         }
@@ -119,10 +125,12 @@ impl fmt::Display for Datum {
                 ListItem::Ellipsis(x) => format!(". {:}", x.borrow())
             }))),
             Datum::Builtin(ref func) => write!(f, "{:?}", func),
+            Datum::BuiltinExt(ref func) => write!(f, "<Builtin {:?}>", func),
             Datum::Lambda(ref lambda) => write!(f, "{:}", lambda),
             Datum::SpecialForm(ref sf) => write!(f, "<SpecialForm {:?}>", sf),
             Datum::Continuation(ref cont) => write!(f, "{:?}", cont),
             Datum::Syntax(ref syntax) => write!(f, "{:?}", syntax),
+            Datum::Environment(ref env) => write!(f, "<Env {:?}>", env.borrow()),
             Datum::Port(ref port) => write!(f, "{:?}", port),
             _ => write!(f, "<Unknown>")
         }
@@ -165,7 +173,7 @@ impl Datum {
     }
 
     pub fn as_character(&self) -> Result<char, RuntimeError> {
-        if let Datum::Character(ref c) = self { Ok(*c) } else { Err(RuntimeError::new(format!("Expected number: {:?}", self))) }
+        if let Datum::Character(ref c) = self { Ok(*c) } else { Err(RuntimeError::new(format!("Expected character: {:?}", self))) }
     }
 
     pub fn is_port(&self) -> bool {
@@ -221,6 +229,7 @@ impl Datum {
 
     pub fn is_procedure(&self) -> bool {
         if let Datum::Builtin(_) = self { true }
+        else if let Datum::BuiltinExt(_) = self { true }
         else if let Datum::Lambda(_) = self { true }
         else if let Datum::Continuation(_) = self { true }
         else { false }
@@ -475,18 +484,20 @@ pub type Cont = Box<Continuation>;
 #[derive(Clone)]
 pub enum Continuation {
     Return,
-    EvaluateList(Value, Env, usize, Cont),
-    EvaluateProcedure(Value, Value, Env, usize, Cont),
-    EvaluateProcedureSplicing(Value, Value, Env, usize, Cont),
-    EvaluateApply(Value, usize, Cont),
-    EvaluateBegin(Value, Env, usize, Cont),
-    EvaluateIf(Value, Env, usize, Cont),    
-    EvaluateSet(Value, Env, usize, Cont),
-    EvaluateSetSyntax(Value, Env, usize, Cont),
-    EvaluateDefine(Value, Env, usize, Cont),
-    EvaluateDefineSyntax(Value, Env, usize, Cont),
-    EvaluateSyntax(Value, Env, usize, Cont),
-    EvaluateCallCC(Cont),
+    EvaluateExpression(Value, Env, usize, Cont),
+    EvaluateOperator(Value, Env, Cont),
+    EvaluateList(Value, Env, Cont),
+    EvaluateProcedure(Value, Value, Env, Cont),
+    EvaluateProcedureSplicing(Value, Value, Env, Cont),
+    EvaluateApply(Value, Cont),
+    EvaluateBegin(Value, Env, Cont),
+    EvaluateIf(Value, Env, Cont),    
+    EvaluateSet(Value, Env, Cont),
+    EvaluateSetSyntax(Value, Env, Cont),
+    EvaluateDefine(Value, Env, Cont),
+    EvaluateDefineSyntax(Value, Env, Cont),
+    // EvaluateSyntax(Value, Env, Cont),
+    // EvaluateCallCC(Cont),
     QuasiquoteList(Value, Value, Env, usize, Cont),
     QuasiquoteListSplicing(Value, Value, Env, usize, Cont),
 }
@@ -505,18 +516,20 @@ impl fmt::Debug for Continuation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Continuation::Return => write!(f, "<Cont/Return>"),
-            Continuation::EvaluateList(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalList {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateProcedure(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/Proc {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
-            Continuation::EvaluateProcedureSplicing(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/ProcS {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
-            Continuation::EvaluateApply(ref expr, ref level, ref cont) => write!(f, "<Cont/Apply {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateBegin(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/Begin {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateIf(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/If {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateSet(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/Set {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateSetSyntax(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/SetSyntax {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateDefine(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/Define {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateDefineSyntax(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/DefineSyntax {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateSyntax(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/Syntax {:?} :{:?}>", expr.borrow(), *cont),
-            Continuation::EvaluateCallCC(ref cont) => write!(f, "<Cont/CallCC :{:?}>", *cont),
+            Continuation::EvaluateExpression(ref expr, ref env, ref level, ref cont) => write!(f, "<Cont/EvalExpr {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateOperator(ref expr, ref env, ref cont) => write!(f, "<Cont/EvalOp {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateList(ref expr, ref env, ref cont) => write!(f, "<Cont/EvalList {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateProcedure(ref car, ref cdr, ref env, ref cont) => write!(f, "<Cont/Proc {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
+            Continuation::EvaluateProcedureSplicing(ref car, ref cdr, ref env, ref cont) => write!(f, "<Cont/ProcS {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
+            Continuation::EvaluateApply(ref expr, ref cont) => write!(f, "<Cont/Apply {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateBegin(ref expr, ref env, ref cont) => write!(f, "<Cont/Begin {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateIf(ref expr, ref env, ref cont) => write!(f, "<Cont/If {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateSet(ref expr, ref env, ref cont) => write!(f, "<Cont/Set {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateSetSyntax(ref expr, ref env, ref cont) => write!(f, "<Cont/SetSyntax {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateDefine(ref expr, ref env, ref cont) => write!(f, "<Cont/Define {:?} :{:?}>", expr.borrow(), *cont),
+            Continuation::EvaluateDefineSyntax(ref expr, ref env, ref cont) => write!(f, "<Cont/DefineSyntax {:?} :{:?}>", expr.borrow(), *cont),
+            // Continuation::EvaluateSyntax(ref expr, ref env, ref cont) => write!(f, "<Cont/Syntax {:?} :{:?}>", expr.borrow(), *cont),
+            // Continuation::EvaluateCallCC(ref cont) => write!(f, "<Cont/CallCC :{:?}>", *cont),
             Continuation::QuasiquoteList(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/QList {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
             Continuation::QuasiquoteListSplicing(ref car, ref cdr, ref env, ref level, ref cont) => write!(f, "<Cont/QListS {:?} - {:?} :{:?}>", car.borrow(), cdr.borrow(), *cont),
         }
@@ -537,13 +550,23 @@ pub enum SpecialForm {
     Quasiquote,
     Unquote,
     UnquoteSplicing,
+    // CallCC,
+    CurrEnv,
+    StandardEnv,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum SpecialProcedure {
+    Apply,
+    Eval,
     CallCC,
+    // CurrEnv,
 }
 
 #[derive(Clone)]
 pub enum Port {
     Output(Rc<RefCell<Write>>),
-    Input(Rc<RefCell<Read>>),
+    Input(Rc<RefCell<BufRead>>),
     None
 }
 

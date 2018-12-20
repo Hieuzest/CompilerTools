@@ -6,7 +6,7 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::mem;
 use std::thread;
-use std::io::{stdin, stdout};
+use std::io::{stdin, stdout, BufReader, BufRead};
 
 use std::collections::HashMap;
 
@@ -29,7 +29,7 @@ impl SymbolTable {
             unspecified: Datum::Unspecified.wrap(),
             bool_t: Datum::Boolean(true).wrap(),
             bool_f: Datum::Boolean(false).wrap(),
-            stdin: Datum::Port(Port::Input(Rc::new(RefCell::new(std::io::stdin())))).wrap(),
+            stdin: Datum::Port(Port::Input(Rc::new(RefCell::new(BufReader::new(std::io::stdin()))))).wrap(),
             stdout: Datum::Port(Port::Output(Rc::new(RefCell::new(std::io::stdout())))).wrap(),
         }
     }

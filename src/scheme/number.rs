@@ -126,7 +126,7 @@ impl fmt::Display for Real {
         match self {
             Real::Single(x) => write!(f, "{}", x),
             Real::Double(x) => write!(f, "{}", x),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -136,7 +136,7 @@ impl PartialOrd for Real {
         match self {
             Real::Single(x) => x.partial_cmp(&other.as_single()),
             Real::Double(x) => x.partial_cmp(&other.as_double()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -148,7 +148,7 @@ impl PartialEq for Real {
         match self {
             Real::Single(x) => x.eq(&other.as_single()),
             Real::Double(x) => x.eq(&other.as_double()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -159,7 +159,7 @@ macro_rules! impl_real {
             match self {
                 Real::Single(x) => Real::Single(x.$func()),
                 Real::Double(x) => Real::Double(x.$func()),
-                _ => panic!()
+                _ => unimplemented!()
             }
         }
     };
@@ -171,7 +171,7 @@ impl Real {
         match self {
             Real::Single(x) => x as i64,
             Real::Double(x) => x as i64,
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -179,7 +179,7 @@ impl Real {
         match self {
             Real::Single(x) => x,
             Real::Double(x) => x as f32,
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -187,7 +187,7 @@ impl Real {
         match self {
             Real::Single(x) => x as f64,
             Real::Double(x) => x,
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -196,7 +196,7 @@ impl Real {
         match self {
             Real::Single(x) => Real::Single(x.atan2(other.as_single())),
             Real::Double(x) => Real::Double(x.atan2(other.as_double())),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -273,7 +273,7 @@ macro_rules! impl_real_op {
                 match self {
                     Real::Single(x) => Real::Single(x.$func(other.as_single())),
                     Real::Double(x) => Real::Double(x.$func(other.as_double())),
-                    _ => panic!()
+                    _ => unimplemented!()
                 }
             }
         }
@@ -283,7 +283,7 @@ macro_rules! impl_real_op {
                 match self {
                     Real::Single(x) => Real::Single(x.$func(other.as_single())),
                     Real::Double(x) => Real::Double(x.$func(other.as_double())),
-                    _ => panic!()
+                    _ => unimplemented!()
                 }
             }
         }
@@ -293,7 +293,7 @@ macro_rules! impl_real_op {
                 match self {
                     Real::Single(x) => Real::Single(x.$func(other.as_single())),
                     Real::Double(x) => Real::Double(x.$func(other.as_double())),
-                    _ => panic!()
+                    _ => unimplemented!()
                 }
             }
         }
@@ -303,7 +303,7 @@ macro_rules! impl_real_op {
                 match self {
                     Real::Single(x) => Real::Single(x.$func(other.as_single())),
                     Real::Double(x) => Real::Double(x.$func(other.as_double())),
-                    _ => panic!()
+                    _ => unimplemented!()
                 }
             }
         }
@@ -327,7 +327,7 @@ impl fmt::Display for Complex {
         match self {
             Complex::Rectangular(r, i) => write!(f, "{}+{}i", r, i),
             Complex::Polar(m, a) => write!(f, "{}*e^i{}", m, a),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -337,7 +337,7 @@ impl PartialEq for Complex {
         match self {
             Complex::Rectangular(r, i) => r.eq(&other.real_part()) && i.eq(&other.real_part()),
             Complex::Polar(m, a) => m.eq(&other.magnitude()) && a.eq(&other.angle()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -347,7 +347,7 @@ impl Complex {
         match self {
             Complex::Rectangular(r, _) => *r,
             Complex::Polar(m, a) => m * a.cos(),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -355,7 +355,7 @@ impl Complex {
         match self {
             Complex::Rectangular(_, i) => *i,
             Complex::Polar(m, a) => m * a.sin(),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -363,7 +363,7 @@ impl Complex {
         match self {
             Complex::Rectangular(r, i) => (r*r + i*i).sqrt(),
             Complex::Polar(m, a) => *m,
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 
@@ -371,7 +371,7 @@ impl Complex {
         match self {
             Complex::Rectangular(r, i) => r.atan2(*i),
             Complex::Polar(m, a) => *a,
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -411,7 +411,7 @@ impl From<Real> for Complex {
         match rhs {
             Real::Double(_) => Complex::Rectangular(rhs, Real::Double(0.0)),
             Real::Single(_) => Complex::Rectangular(rhs, Real::Single(0.0)),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -425,7 +425,7 @@ impl ops::Add for Complex {
                 Complex::Rectangular(r + or, i + oi)
             },
             Complex::Polar(m, a) => Complex::Rectangular(self.real_part() + other.real_part(), self.imag_part() + other.imag_part()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -439,7 +439,7 @@ impl ops::Sub for Complex {
                 Complex::Rectangular(r - or, i - oi)
             },
             Complex::Polar(m, a) => Complex::Rectangular(self.real_part() - other.real_part(), self.imag_part() - other.imag_part()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -453,7 +453,7 @@ impl ops::Mul for Complex {
                 Complex::Rectangular(r * or - i * oi, r * oi + i * or)
             },
             Complex::Polar(m, a) => Complex::Polar(m * other.magnitude(), a + other.angle()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -468,7 +468,7 @@ impl ops::Div for Complex {
                 Complex::Rectangular((r * or + i * oi) / m, (r * oi - i * or) / m)
             },
             Complex::Polar(m, a) => Complex::Polar(m / other.magnitude(), a - other.angle()),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -490,7 +490,7 @@ impl fmt::Display for Number {
             Number::Rational(x) => write!(f, "{}", x),
             Number::Real(x) => write!(f, "{}", x),
             Number::Complex(x) => write!(f, "{}", x),
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -593,7 +593,7 @@ impl ops::Div for Number {
                     Number::Complex(y) => Number::Complex(x.div(y)),
                 }
             },
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -636,7 +636,7 @@ macro_rules! impl_number_op {
                             Number::Complex(y) => Number::Complex(x.$func(y)),
                         }
                     },
-                    _ => panic!()
+                    _ => unimplemented!()
                 }
             }
         }
@@ -674,7 +674,7 @@ impl PartialOrd for Number {
                 }
             },
             Number::Complex(x) => None,
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }
@@ -716,7 +716,7 @@ impl PartialEq for Number {
                     Number::Complex(y) => x.eq(&y),
                 }
             },
-            _ => panic!()
+            _ => unimplemented!()
         }
     }
 }

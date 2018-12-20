@@ -8,6 +8,7 @@ use std::iter;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::io;
+use std::io::{Read, BufRead, BufReader, Write};
 use std::io::prelude::*;
 use std::fs::File;
 
@@ -165,6 +166,10 @@ pub fn is_boolean(operands: Value) -> Result<Value, RuntimeError> {
     Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_boolean()))
 }
 
+pub fn is_char(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_character()))
+}
+
 pub fn is_number(operands: Value) -> Result<Value, RuntimeError> {
     Ok(SymbolTable::bool(operands.borrow().car()?.borrow().is_number()))
 }
@@ -275,6 +280,13 @@ pub fn char_eq(operands: Value) -> Result<Value, RuntimeError> {
     Ok(SymbolTable::bool(operands.borrow().car()?.borrow().as_character()? == operands.borrow().cadr()?.borrow().as_character()?))
 }
 
+pub fn char_lt(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().as_character()? < operands.borrow().cadr()?.borrow().as_character()?))
+}
+
+pub fn char_le(operands: Value) -> Result<Value, RuntimeError> {
+    Ok(SymbolTable::bool(operands.borrow().car()?.borrow().as_character()? <= operands.borrow().cadr()?.borrow().as_character()?))
+}
 
 pub fn make_vector(operands: Value) -> Result<Value, RuntimeError> {
     if operands.borrow().len() == 1 {
@@ -335,7 +347,7 @@ pub fn string_set(operands: Value) -> Result<Value, RuntimeError> {
 // Port IO
 
 pub fn open_input_file(operands: Value) -> Result<Value, RuntimeError> {
-    Ok(Datum::Port(Port::Input(Rc::new(RefCell::new(File::open(operands.borrow().car()?.borrow().as_string()?).or(error!("unable to open input file"))?)))).wrap())
+    Ok(Datum::Port(Port::Input(Rc::new(RefCell::new(BufReader::new(File::open(operands.borrow().car()?.borrow().as_string()?).or(error!("unable to open input file"))?))))).wrap())
 }
 
 pub fn open_output_file(operands: Value) -> Result<Value, RuntimeError> {
@@ -376,6 +388,37 @@ pub fn read_char(operands: Value) -> Result<Value, RuntimeError> {
                 if let Port::Input(f) = operands.borrow().car()?.borrow().as_port()? {
                     let mut buffer = [0; 1];
                     if let Ok(_) = f.borrow_mut().read(&mut buffer) {
+                        Ok(SymbolTable::character(buffer[0] as char))
+                    } else {
+                        error!("Read error")
+                    }
+                } else {
+                    error!("Expected input port")
+                }
+            },
+            _ => {
+                error!("unexpected arguments number in read-char")
+            }
+        }
+}
+
+pub fn peek_char(operands: Value) -> Result<Value, RuntimeError> {
+    let len = operands.borrow().len();
+        match len {
+            0 => {
+                if let Port::Input(f) = SymbolTable::stdin().borrow().as_port()? {
+                    if let Ok(buffer) = f.borrow_mut().fill_buf() {
+                        Ok(SymbolTable::character(buffer[0] as char))
+                    } else {
+                        error!("Read from stdin error")
+                    }
+                } else {
+                    error!("Expected input port")
+                }
+            },
+            1 => {
+                if let Port::Input(f) = operands.borrow().car()?.borrow().as_port()? {
+                    if let Ok(buffer) = f.borrow_mut().fill_buf() {
                         Ok(SymbolTable::character(buffer[0] as char))
                     } else {
                         error!("Read error")

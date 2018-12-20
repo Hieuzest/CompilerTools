@@ -1,8 +1,8 @@
-#![feature(alloc_system)]
-extern crate alloc_system;
+//#![feature(alloc_system)]
+//extern crate alloc_system;
 
-#[global_allocator]
-static GLOBAL: alloc_system::System = alloc_system::System;
+//#[global_allocator]
+//static GLOBAL: alloc_system::System = alloc_system::System;
 
 use argparse::{ArgumentParser, Store, StoreTrue};
 use coolc::utils::*;

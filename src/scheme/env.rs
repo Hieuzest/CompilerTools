@@ -63,7 +63,7 @@ impl Environment {
     }
 
     fn global() -> Env {
-        let m = builtins![
+        let mut m = builtins![
             "=" => core::eq,
             "<" => core::lt,
             "<=" => core::le,
@@ -109,6 +109,8 @@ impl Environment {
             "list" => core::list,
 
             "char=" => core::char_eq,
+            "char<" => core::char_lt,
+            "char<=" => core::char_le,
 
             "null?" => core::is_null,
             "eq?" => core::is_eq,
@@ -117,8 +119,9 @@ impl Environment {
             "integer?" => core::is_integer,
             "rational?" => core::is_rational,
             "real?" => core::is_real,
-            "complex" => core::is_complex,
+            "complex?" => core::is_complex,
             "boolean?" => core::is_boolean,
+            "char?" => core::is_char,
             "string?" => core::is_string,
             "port?" => core::is_port,
             "input-port?" => core::is_input_port,
@@ -132,10 +135,12 @@ impl Environment {
             "make-vector" => core::make_vector,
             "vector-ref" => core::vector_ref,
             "vector-set" => core::vector_set,
+            "vector-length" => core::vector_length,
 
             "make-string" => core::make_string,
             "string-ref" => core::string_ref,
             "string-set" => core::string_set,
+            "string-length" => core::string_length,
 
             "set-car!" => core::set_car,
             "set-cdr!" => core::set_cdr,
@@ -156,12 +161,20 @@ impl Environment {
             "close-output-file" => core::close_output_file,
 
             "read-char" => core::read_char,
+            "peek-char" => core::peek_char,
             "write-char" => core::write_char,
             "display" => |v| {
                 print!("{:}", v.borrow().car()?.borrow());
                 Ok(SymbolTable::unspecified())
             }
         ];
+
+        m.insert("apply".to_string(), Datum::BuiltinExt(SpecialProcedure::Apply).wrap());
+        m.insert("eval".to_string(), Datum::BuiltinExt(SpecialProcedure::Eval).wrap());
+        m.insert("call/cc".to_string(), Datum::BuiltinExt(SpecialProcedure::CallCC).wrap());
+        m.insert("call-with-currenet-continuation".to_string(), Datum::BuiltinExt(SpecialProcedure::CallCC).wrap());
+        // m.insert("curr-env".to_string(), Datum::BuiltinExt(SpecialProcedure::CurrEnv).wrap());
+
         let sm = sforms![
             "begin" => Begin,
             "define" => Define,
@@ -186,8 +199,10 @@ impl Environment {
             // "let-rec" => Letrec,
             "define-syntax" => DefineSyntax,
             "syntax-rules" => SyntaxRules,
-            "call/cc" => CallCC,
-            "call-with-currenet-continuation" => CallCC
+            // "call/cc" => CallCC,
+            // "call-with-currenet-continuation" => CallCC
+            "curr-env" => CurrEnv,
+            "standard-env" => StandardEnv
         ];
 
         Environment {
@@ -207,7 +222,7 @@ impl Environment {
         Environment {
             parent: None,
             ..Default::default()
-        }.wrap()    
+        }.wrap()
     }
 
     pub fn put(&mut self, name: String, data: Value) {
@@ -222,7 +237,7 @@ impl Environment {
         } else if let Some(p) = &mut self.parent {
             p.borrow_mut().set(name, data)
         } else {
-            Err(RuntimeError::new(format!("No variable named {:}", name)))
+            Err(RuntimeError::new(format!("Unbound variable {:}", name)))
         }        
     }
 
@@ -232,7 +247,7 @@ impl Environment {
         } else if let Some(p) = &self.parent {
             p.borrow().find(name)
         } else {
-            Err(RuntimeError::new(format!("No variable named {:}", name)))
+            Err(RuntimeError::new(format!("Unbound variable {:}", name)))
         }
     }
 
@@ -248,7 +263,7 @@ impl Environment {
         } else if let Some(p) = &mut self.parent {
             p.borrow_mut().set_syntax(name, data)
         } else {
-            Err(RuntimeError::new(format!("No variable named {:}", name)))
+            Err(RuntimeError::new(format!("No keyword found {:}", name)))
         }        
     }
 
@@ -258,7 +273,7 @@ impl Environment {
         } else if let Some(p) = &self.parent {
             p.borrow().find_syntax(name)
         } else {
-            Err(RuntimeError::new(format!("No variable named {:}", name)))
+            Err(RuntimeError::new(format!("No keyword found {:}", name)))
         }
     }
 
