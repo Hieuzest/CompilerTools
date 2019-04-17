@@ -1,0 +1,3212 @@
+---
+- ? Terminal:
+      type_: Alias
+      value: ~
+  : Shift: 5
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 4
+  ? NonTerminal:
+      name: RegularExpression
+      unwrap: true
+  : Shift: 8
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 7
+  ? NonTerminal:
+      name: Kleen
+      unwrap: false
+  : Shift: 10
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Shift: 3
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Shift: 2
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 6
+  ? NonTerminal:
+      name: Alternative
+      unwrap: false
+  : Shift: 9
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Shift: 1
+  ? NonTerminal:
+      name: Term
+      unwrap: false
+  : Shift: 11
+- ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 6
+  ? NonTerminal:
+      name: Kleen
+      unwrap: false
+  : Shift: 10
+  ? NonTerminal:
+      name: Term
+      unwrap: false
+  : Shift: 11
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 7
+  ? NonTerminal:
+      name: RegularExpression
+      unwrap: false
+  : Shift: 42
+  ? NonTerminal:
+      name: Alternative
+      unwrap: false
+  : Shift: 9
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Shift: 2
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 4
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Shift: 1
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Shift: 3
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Shift: 5
+- ? NonTerminal:
+      name: Alternative
+      unwrap: false
+  : Shift: 9
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 6
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Shift: 1
+  ? NonTerminal:
+      name: RegularExpression
+      unwrap: false
+  : Shift: 40
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 7
+  ? NonTerminal:
+      name: Kleen
+      unwrap: false
+  : Shift: 10
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Shift: 5
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Shift: 2
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Shift: 3
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 4
+  ? NonTerminal:
+      name: Term
+      unwrap: false
+  : Shift: 11
+- ? NonTerminal:
+      name: CharTerm
+      unwrap: false
+  : Shift: 27
+  ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Term$chargroup$repetitionterm#1"
+      unwrap: true
+  : Shift: 26
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 24
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Term$chargroup$repetition#1"
+      unwrap: true
+  : Shift: 25
+- ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: charn
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: alias
+      expr:
+        terms:
+          - Terminal:
+              type_: Alias
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: charr
+      expr:
+        terms:
+          - Terminal:
+              type_: CharRange
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: $
+      label: ""
+      expr:
+        terms:
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Shift: 19
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "RegularExpression$union$repetitionterm#1"
+      unwrap: true
+  : Shift: 21
+  ? NonTerminal:
+      name: "RegularExpression$union$repetition#1"
+      unwrap: true
+  : Shift: 20
+- ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 6
+  ? NonTerminal:
+      name: "Alternative$concat$repetitionterm#1"
+      unwrap: true
+  : Shift: 16
+  ? NonTerminal:
+      name: Term
+      unwrap: false
+  : Shift: 11
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Shift: 2
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Shift: 5
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Shift: 3
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 4
+  ? NonTerminal:
+      name: "Alternative$concat$repetition#1"
+      unwrap: true
+  : Shift: 15
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Shift: 1
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 7
+  ? NonTerminal:
+      name: Kleen
+      unwrap: false
+  : Shift: 17
+- ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Kleen$kleen$optional#1"
+      unwrap: true
+  : Shift: 13
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Kleen$kleen$optionalterm#1"
+      unwrap: true
+  : Shift: 14
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Shift: 12
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optionalterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Kleen
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Kleen
+      label: kleen
+      expr:
+        terms:
+          - NonTerminal:
+              name: Term
+              unwrap: false
+          - NonTerminal:
+              name: "Kleen$kleen$optional#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Kleen$kleen$optional#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Kleen$kleen$optionalterm#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Alternative
+      label: concat
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Alternative
+      label: concat
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Alternative
+      label: concat
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Alternative
+      label: concat
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? NonTerminal:
+      name: "Alternative$concat$repetitionterm#1"
+      unwrap: true
+  : Shift: 16
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 4
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Shift: 1
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Shift: 5
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 6
+  ? NonTerminal:
+      name: Kleen
+      unwrap: false
+  : Shift: 17
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Alternative$concat$repetition#1"
+      unwrap: true
+  : Shift: 18
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Shift: 3
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 7
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Shift: 2
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: Term
+      unwrap: false
+  : Shift: 11
+- ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: Kleen
+              unwrap: false
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Alternative$concat$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Alternative$concat$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Alternative$concat$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "Alternative$concat$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Alternative$concat$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Alternative$concat$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: LMatch
+      value: ~
+  : Shift: 1
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 4
+  ? NonTerminal:
+      name: Term
+      unwrap: false
+  : Shift: 11
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Shift: 5
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Shift: 2
+  ? NonTerminal:
+      name: Alternative
+      unwrap: false
+  : Shift: 23
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Shift: 3
+  ? NonTerminal:
+      name: Kleen
+      unwrap: false
+  : Shift: 10
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 7
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 6
+- ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: RegularExpression
+      label: union
+      expr:
+        terms:
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+          - NonTerminal:
+              name: "RegularExpression$union$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: RegularExpression
+      label: union
+      expr:
+        terms:
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+          - NonTerminal:
+              name: "RegularExpression$union$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: RegularExpression
+      label: union
+      expr:
+        terms:
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+          - NonTerminal:
+              name: "RegularExpression$union$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "RegularExpression$union$repetitionterm#1"
+      unwrap: true
+  : Shift: 21
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Shift: 19
+  ? NonTerminal:
+      name: "RegularExpression$union$repetition#1"
+      unwrap: true
+  : Shift: 22
+- ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "RegularExpression$union$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "RegularExpression$union$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "RegularExpression$union$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "RegularExpression$union$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "RegularExpression$union$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "RegularExpression$union$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Alternation
+              value: ~
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Alternation
+              value: ~
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Alternation
+              value: ~
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: "RegularExpression$union$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: Alternation
+              value: ~
+          - NonTerminal:
+              name: Alternative
+              unwrap: false
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: CharTerm
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: CharTerm
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: CharTerm
+      label: char
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Shift: 38
+- ? NonTerminal:
+      name: "Term$chargroup$optionalterm#2"
+      unwrap: true
+  : Shift: 31
+  ? NonTerminal:
+      name: "Term$chargroup$optional#2"
+      unwrap: true
+  : Shift: 30
+  ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optional#2"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Shift: 29
+- ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Term$chargroup$repetition#1"
+      unwrap: true
+  : Shift: 28
+  ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetition#1"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 24
+  ? NonTerminal:
+      name: CharTerm
+      unwrap: false
+  : Shift: 27
+  ? NonTerminal:
+      name: "Term$chargroup$repetitionterm#1"
+      unwrap: true
+  : Shift: 26
+- ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: CharTerm
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: CharTerm
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetitionterm#1"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: CharTerm
+              unwrap: false
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Term$chargroup$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$repetition#1"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Term$chargroup$repetitionterm#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? NonTerminal:
+      name: CharTerm
+      unwrap: false
+  : Shift: 33
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 24
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Shift: 32
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optional#2"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Term$chargroup$optionalterm#2"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: chargroup
+      expr:
+        terms:
+          - Terminal:
+              type_: LCharGroup
+              value: ~
+          - NonTerminal:
+              name: "Term$chargroup$repetition#1"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optional#2"
+              unwrap: true
+          - Terminal:
+              type_: RCharGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 24
+  ? NonTerminal:
+      name: CharTerm
+      unwrap: false
+  : Shift: 36
+  ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? NonTerminal:
+      name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+      unwrap: true
+  : Shift: 34
+  ? NonTerminal:
+      name: "Term$chargroup$optionalterm#2$#0$repetitionterm#2"
+      unwrap: true
+  : Shift: 35
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optionalterm#2"
+      label: "#0"
+      expr:
+        terms:
+          - Terminal:
+              type_: CharNeg
+              value: ~
+          - NonTerminal:
+              name: CharTerm
+              unwrap: false
+          - NonTerminal:
+              name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+      label: epsilon
+      expr:
+        terms: []
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 24
+  ? NonTerminal:
+      name: "Term$chargroup$optionalterm#2$#0$repetitionterm#2"
+      unwrap: true
+  : Shift: 35
+  ? NonTerminal:
+      name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+      unwrap: true
+  : Shift: 37
+  ? NonTerminal:
+      name: CharTerm
+      unwrap: false
+  : Shift: 36
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optionalterm#2$#0$repetitionterm#2"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: CharTerm
+              unwrap: false
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optionalterm#2$#0$repetitionterm#2"
+      label: "#0"
+      expr:
+        terms:
+          - NonTerminal:
+              name: CharTerm
+              unwrap: false
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+      label: main
+      expr:
+        terms:
+          - NonTerminal:
+              name: "Term$chargroup$optionalterm#2$#0$repetitionterm#2"
+              unwrap: true
+          - NonTerminal:
+              name: "Term$chargroup$optionalterm#2$#0$repetition#2"
+              unwrap: true
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: Char
+      value: ~
+  : Shift: 39
+- ? Terminal:
+      type_: RCharGroup
+      value: ~
+  : Reduce:
+      name: CharTerm
+      label: charset
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+          - Terminal:
+              type_: CharRange
+              value: ~
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: CharTerm
+      label: charset
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+          - Terminal:
+              type_: CharRange
+              value: ~
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: CharTerm
+      label: charset
+      expr:
+        terms:
+          - Terminal:
+              type_: Char
+              value: ~
+          - Terminal:
+              type_: CharRange
+              value: ~
+          - Terminal:
+              type_: Char
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RGroup
+      value: ~
+  : Shift: 41
+- ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: group
+      expr:
+        terms:
+          - Terminal:
+              type_: LGroup
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RGroup
+              value: ~
+      precedence: 0
+      associativity: Left
+- ? Terminal:
+      type_: RMatch
+      value: ~
+  : Shift: 43
+- ? Terminal:
+      type_: $
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Char
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharNeg
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: CharRange
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alternation
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: RMatch
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Alias
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: Kleen
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left
+  ? Terminal:
+      type_: LCharGroup
+      value: ~
+  : Reduce:
+      name: Term
+      label: match
+      expr:
+        terms:
+          - Terminal:
+              type_: LMatch
+              value: ~
+          - NonTerminal:
+              name: RegularExpression
+              unwrap: false
+          - Terminal:
+              type_: RMatch
+              value: ~
+      precedence: 0
+      associativity: Left

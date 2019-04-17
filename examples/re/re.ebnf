@@ -1,0 +1,12 @@
+RegularExpression   =   ?union?     Alternative { "Alternation" Alternative } .
+Alternative         =   ?concat?    Kleen { Kleen } .
+Kleen               =   ?kleen?     Term [ "Kleen" ] .
+Term                =   ?match?     "LMatch" RegularExpression "RMatch"
+                    |   ?group?     "LGroup" RegularExpression "RGroup"
+                    |   ?chargroup? "LCharGroup" { CharTerm } [ "CharNeg" CharTerm { CharTerm } ] "RCharGroup"
+                    |   ?alias?     "Alias"
+                    |   ?charr?     "CharRange"
+                    |   ?charn?     "CharNeg"
+                    |   ?char?      "Char" .
+CharTerm            =   ?charset?   "Char" "CharRange" "Char"
+                    |   ?char?      "Char" .

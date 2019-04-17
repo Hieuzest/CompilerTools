@@ -530,6 +530,13 @@ impl Number {
         }
     }
 
+    pub fn simplify(&self) -> Number {
+        match self {
+            Number::Rational(x) if x.denominator == 1 => Number::Integer(x.numerator),
+            Number::Complex(x) if x.imag_part() == Real::from(0) => Number::Real(x.real_part()),
+            _ => *self
+        }
+    }
 }
 
 impl From<i64> for Number {

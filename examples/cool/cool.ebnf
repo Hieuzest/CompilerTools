@@ -1,0 +1,29 @@
+program     =   ?program?   class "DELIMITER" { class "DELIMITER" } .
+class       =   ?class?     "CLASS" "TYPEID" [ "INHERITS" "TYPEID" ] "LBLOCK" { feature "DELIMITER" } "RBLOCK" .
+feature     =   ?method?    "OBJECTID" "LTUPLE" [ formal { "COMMA" formal } ] "RTUPLE" "TYPE_DEC" "TYPEID" "LBLOCK" expr "RBLOCK"
+            |   ?attribute? "OBJECTID" "TYPE_DEC" "TYPEID" [ "ASSIGN" expr ] .
+formal      =   ?formal?    "OBJECTID" "TYPE_DEC" "TYPEID" .
+expr        =   ?assign?    |100<   "OBJECTID" "ASSIGN" expr
+            |   ?dispatch?  expr [ "TYPE_ANN" "TYPEID" ] "DISPATCH" "OBJECTID" "LTUPLE" [ expr { "COMMA" expr } ] "RTUPLE"
+            |   ?sdispatch? "OBJECTID" "LTUPLE" [ expr { "COMMA" expr } ] "RTUPLE"
+            |   ?if?        "IF" expr "THEN" expr "ELSE" expr "FI"
+            |   ?while?     "WHILE" expr "LOOP" expr "POOL"
+            |   ?block?     "LBLOCK" expr "DELIMITER" { expr "DELIMITER" } "RBLOCK"
+            |   ?let?       |50>    "LET" "OBJECTID" "TYPE_DEC" "TYPEID" [ "ASSIGN" expr ] { "COMMA" "OBJECTID" "TYPE_DEC" "TYPEID" [ "ASSIGN" expr ] } "IN" expr
+            |   ?case?      "CASE" expr "OF" "OBJECTID" "TYPE_DEC" "TYPEID" "DARROW" expr "DELIMITER" { "OBJECTID" "TYPE_DEC" "TYPEID" "DARROW" expr "DELIMITER" } "ESAC"
+            |   ?new?       "NEW" "TYPEID"
+            |   ?isvoid?    |6>     "ISVOID" expr
+            |   ?add?       |10>    expr "OP_ADD" expr
+            |   ?sub?       |10>    expr "OP_SUB" expr
+            |   ?mul?       |8>     expr "OP_MUL" expr
+            |   ?div?       |8>     expr "OP_DIV" expr
+            |   ?neg?       |4>     "OP_NEG" expr
+            |   ?lt?        |15>    expr "OP_LT" expr
+            |   ?le?        |15>    expr "OP_LE" expr
+            |   ?eq?        |15>    expr "OP_EQ" expr
+            |   ?not?       |20>    "NOT" expr
+            |   ?tuple?     "LTUPLE" expr "RTUPLE"
+            |   ?object?    "OBJECTID"
+            |   ?int?       "INT_CONST"
+            |   ?string?    "STR_CONST"
+            |   ?bool?      "BOOL_CONST" .

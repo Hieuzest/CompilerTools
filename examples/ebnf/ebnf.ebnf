@@ -1,0 +1,17 @@
+ProductionList  =   { Production } .
+Production      =   "ProductionName" "Assign" [ ExpressionNode { "Alternation" ExpressionNode } ] "Terminator" .
+ExpressionNode  =   [ "SpecialSequence" ] [ Precedence ] Expression
+                |   Precedence "SpecialSequence" Expression .
+Precedence      =   "LeftPrecedence"
+                |   "RightPrecedence" .
+Expression      =   <TermNode> { <TermNode> } .
+TermNode        =   "LeftUnwrap" Term "RightUnwrap"
+                |   Term .
+Term            =   "ProductionName"
+                |   "Token" [ "TokenValue" "Token" ]
+                |   Group
+                |   Optional
+                |   Repetition .
+Group           =   "LeftGroup" Expression "RightGroup" .
+Optional        =   "LeftOptional" Expression "RightOptional" .
+Repetition      =   "LeftRepetition" Expression "RightRepetition" .

@@ -93,7 +93,7 @@ fn main() {
 
     {
         let mut ap = ArgumentParser::new();
-        ap.set_description("General Syntax Analyzer");
+        ap.set_description("A Scheme Interpreter");
         ap.refer(&mut debug)
             .add_option(&["-d", "--debug"], StoreTrue, "Show debug messages");
         ap.refer(&mut verbose)

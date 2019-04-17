@@ -1,0 +1,6 @@
+ProductionList      =   Production { "NewLine" Production } .
+Production          =   "Symbol" "Assign" Expression .
+Expression          =   Alternative { [ "NewLine" ] "Alternation" Alternative } .
+Alternative         =   Term { Term } .
+Term                =   "Symbol"
+                    |   "Literal" .
