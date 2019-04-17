@@ -1,0 +1,10 @@
+{
+"employees": [
+{ "firstName":"John" , "lastName":"Doe" },
+{ "firstName":"Anna" , "lastName":"Smith" },
+{ "firstName":"Peter" , "lastName":"Jones" }
+],
+"scores": [
+    1, 3, 5.0
+]
+}

@@ -34,7 +34,7 @@ fn main() {
     let mut verbose = false;
     let mut test = false;
     let mut do_lexer = false;
-    let mut lexer_grammar_config = get_env_var("PARSER_GRAMMAR_LEXER_CONFIG", "ebnf.lex");
+    let mut lexer_grammar_config = get_env_var("PARSER_GRAMMAR_LEXER_CONFIG", "examples/ebnf/ebnf.lex");
     let mut lexer_input_config = get_env_var("PARSER_LEXER_CONFIG", "examples/cool/cool.lex");
     let mut parser_config = get_env_var("PARSER_CONFIG", "examples/cool/cool.ebnf");
     let mut input_file = String::new();

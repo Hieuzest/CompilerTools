@@ -1,0 +1,13 @@
+JsonInstance    =   JsonObject
+                |   JsonArray 
+                |   JsonString
+                |   JsonNumber
+                |   JsonBoolean
+                |   JsonNull .
+JsonArray       =   "LeftArray" JsonInstance { "Comma" JsonInstance } "RightArray" .
+JsonObject      =   "LeftObject" JsonPair { "Comma" JsonPair } "RightObject" .
+JsonPair        =   JsonString "Colon" JsonInstance .
+JsonString      =   "String" .
+JsonNumber      =   "Int" | "Double" .
+JsonBoolean     =   "True" | "False" .
+JsonNull        =   "Null" .

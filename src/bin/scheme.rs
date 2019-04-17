@@ -86,7 +86,7 @@ fn main() {
     let mut verbose = false;
     let mut repl = false;
     let mut test = false;
-    let mut lexer_input_model = get_env_var("LEXER_MODEL", "");
+    let mut lexer_input_model = get_env_var("LEXER_MODEL", "examples/scheme/scheme.lexmodel");
     let mut lexer_input_tokens = get_env_var("PARSER_TOKENS", "");
     let mut input_file = String::new();
     let mut output_file = String::new();
